@@ -133,15 +133,14 @@ def validation_reserve(uid, data_list):
 
 # 예약 조회
 @app.route('/reserve', methods=['GET'])
-@jwt_required()
+@jwt_required(optional=True)
 def find_reserve():
     uid = get_jwt_identity()
     reserves = list(db.reserve.find())
     
-    
     for reserve in reserves:
         del reserve['_id']
-        if reserve['id'] == uid:
+        if uid and reserve['id'] == uid:
             reserve['own'] = True
         else:
             reserve['own'] = False
