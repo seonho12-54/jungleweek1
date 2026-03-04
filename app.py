@@ -2,8 +2,10 @@ from bson import ObjectId # pymongo가 설치될 때 함께 설치됨. (install 
 from pymongo import MongoClient
 
 from flask import Flask, render_template, jsonify, request
+from dotenv import load_dotenv
 from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token, get_jwt_identity, unset_jwt_cookies, create_refresh_token, jwt_refresh_token_required,
+    JWTManager, jwt_required, create_access_token, get_jwt_identity,
+    unset_jwt_cookies, create_refresh_token
 )
 from flask.json.provider import JSONProvider
 from flask_bcrypt import Bcrypt
@@ -54,7 +56,6 @@ app.json = CustomJSONProvider(app)
 
 @app.route('/')
 def home():
-    
     return render_template('index.html')
 
 # 회원가입
@@ -73,6 +74,23 @@ def create_user():
    db.users.insert_one(user)
    return jsonify({'result': 'success'})
     
+@app.route('/login', methods=['POST'])
+def login():
+    accessToken = create_access_token(identity = 'ekrrdj2')
+    refreshToken = create_refresh_token(identity = 'ekrrdj2')
+    return jsonify(access_Token=accessToken, refresh_Token=refreshToken)
+# 예약 신청
+@app.route('/reserve', methods=['POST'])
+@jwt_required()
+def reserve():
+    id = get_jwt_identity()
+    data_list = request.get_json()
+    db.reserve.insert_many(data_list)
 
+    return jsonify({'result': 'success'})
+
+
+
+# 
 if __name__ == '__main__':
-    app.run('0.0.0.0', port=5000, debug=True)
+    app.run('0.0.0.0', port=5001, debug=True)
