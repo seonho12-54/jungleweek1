@@ -136,10 +136,9 @@ def validation_reserve(uid, data_list):
 @jwt_required(optional=True)
 def find_reserve():
     uid = get_jwt_identity()
-    reserves = list(db.reserve.find())
+    reserves = list(db.reserve.find({},{'_id':0}))
     
     for reserve in reserves:
-        del reserve['_id']
         if uid and reserve['id'] == uid:
             reserve['own'] = True
         else:
