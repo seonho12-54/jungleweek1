@@ -159,10 +159,6 @@ def find_machine(machine_type):
     
     return jsonify(machines)
 
-@app.route('/login', methods=['POST'])
-def login():
-    access_token = create_access_token('ekrrdj2')
-    return jsonify(access_token = access_token)
     
 # 에러핸들러
 @app.errorhandler(409)
