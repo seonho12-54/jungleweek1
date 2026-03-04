@@ -74,23 +74,34 @@ def create_user():
    db.users.insert_one(user)
    return jsonify({'result': 'success'})
     
-@app.route('/login', methods=['POST'])
-def login():
-    accessToken = create_access_token(identity = 'ekrrdj2')
-    refreshToken = create_refresh_token(identity = 'ekrrdj2')
-    return jsonify(access_Token=accessToken, refresh_Token=refreshToken)
+
 # 예약 신청
 @app.route('/reserve', methods=['POST'])
 @jwt_required()
-def reserve():
-    id = get_jwt_identity()
+def create_reserve():
+    uid = get_jwt_identity()
     data_list = request.get_json()
+    for data in data_list:
+        data['id'] = uid
     db.reserve.insert_many(data_list)
 
     return jsonify({'result': 'success'})
 
-
-
-# 
+# 예약 조회
+@app.route('/reserve', methods=['GET'])
+@jwt_required()
+def find_reserve():
+    uid = get_jwt_identity()
+    reserves = list(db.reserve.find())
+    
+    
+    for reserve in reserves:
+        del reserve['_id']
+        if reserve['id'] == uid:
+            reserve['own'] = True
+        else:
+            reserve['own'] = False
+    return jsonify(result = reserves)
+    
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5001, debug=True)
