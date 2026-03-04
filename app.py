@@ -145,6 +145,25 @@ def find_reserve():
         else:
             reserve['own'] = False
     return jsonify(result = reserves)
+# 세탁기/건조기 조회
+@app.route('/machine/<machine_type>', methods=['GET'])
+def find_machine(machine_type):
+    prefix = "L" if machine_type == "laundry" else "D"
+
+    # item이 prefix로 시작하는 machine 목록 조회
+    machines = list(db.machine.find(
+        {"item": {"$regex": f"^{prefix}"}},
+        {"_id": 0}  # _id 제외
+    ))
+
+    # 기계에 예약이 되어있는지 유무
+    
+    return jsonify(machines)
+
+@app.route('/login', methods=['POST'])
+def login():
+    access_token = create_access_token('ekrrdj2')
+    return jsonify(access_token = access_token)
     
 # 에러핸들러
 @app.errorhandler(409)
