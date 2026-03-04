@@ -2,16 +2,26 @@ from bson import ObjectId # pymongo가 설치될 때 함께 설치됨. (install 
 from pymongo import MongoClient
 
 from flask import Flask, render_template, jsonify, request
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token, get_jwt_identity, unset_jwt_cookies, create_refresh_token, jwt_refresh_token_required,
+)
 from flask.json.provider import JSONProvider
-
+from flask_bcrypt import Bcrypt
 import json
+import os
 import sys
 
-
+load_dotenv()
 app = Flask(__name__)
-
+jwt = JWTManager(app)
 client = MongoClient('mongodb://test:test@localhost',27017)
 db = client.dbjungle
+
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['BCRYPT_LEVEL'] = os.environ.get('BCRYPT_LEVEL')
+bcrypt = Bcrypt(app)
+
+
 
 
 #####################################################################################
@@ -44,65 +54,25 @@ app.json = CustomJSONProvider(app)
 
 @app.route('/')
 def home():
+    
     return render_template('index.html')
 
-# 메모 생성
-@app.route('/memo', methods=['POST'])
-def create_memo():
-    title_receive = request.form['title_give']
-    content_receive = request.form['content_give']
-    
-    memo = {
-        'title': title_receive,
-        'content': content_receive,
-        'likes': 0
-    }
-    
-    db.memos.insert_one(memo)
-    
-    return jsonify({'result': 'success'})
+# 회원가입
+@app.route('/user', methods=['POST'])
+def create_user():
+   data = request.get_json()
+   pwd = data['pwd']
+   encryptPwd = bcrypt.generate_password_hash(pwd)
+   user = {
+       'id' : data['id'],
+       'pwd' : encryptPwd,
+       'gender' : data['gender'],
+       'name' : data['name']
+   }
 
-# 메모 조회
-@app.route('/memo', methods=['GET'])
-def read_memos():
-    memos = list(db.memos.find({}))
-    memos.sort(key=lambda memo: memo['likes'], reverse= True)
-    return jsonify({'result': 'success', 'memos': memos})
-
-# 메모 수정
-@app.route('/memo', methods=['PUT'])
-def update_memo():
-    id_receive = request.form['id_give']
-    title_receive = request.form['title_give']
-    content_receive = request.form['content_give']
+   db.users.insert_one(user)
+   return jsonify({'result': 'success'})
     
-    db.memos.update_one(
-        {'_id': ObjectId(id_receive)},
-        {'$set': {'title': title_receive, 'content': content_receive}}
-    )
-    
-    return jsonify({'result': 'success'})
-
-# 메모 삭제
-@app.route('/memo', methods=['DELETE'])
-def delete_memo():
-    id_receive = request.form['id_give']
-    
-    db.memos.delete_one({'_id': ObjectId(id_receive)})
-    
-    return jsonify({'result': 'success'})
-
-# 좋아요
-@app.route('/memo/like', methods=['POST'])
-def like_memo():
-    id_receive = request.form['id_give']
-    
-    db.memos.update_one(
-        {'_id': ObjectId(id_receive)},
-        {'$inc': {'likes': 1}}  
-    )
-    
-    return jsonify({'result': 'success'})
 
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)
