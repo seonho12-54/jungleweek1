@@ -1,7 +1,7 @@
 from bson import ObjectId # pymongo가 설치될 때 함께 설치됨. (install X)
 from pymongo import MongoClient
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, abort
 from dotenv import load_dotenv
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token, get_jwt_identity,
@@ -12,6 +12,8 @@ from flask_bcrypt import Bcrypt
 import json
 import os
 import sys
+from datetime import datetime
+
 
 load_dotenv()
 app = Flask(__name__)
@@ -81,11 +83,53 @@ def create_user():
 def create_reserve():
     uid = get_jwt_identity()
     data_list = request.get_json()
+    validation_reserve(uid, data_list)
     for data in data_list:
         data['id'] = uid
     db.reserve.insert_many(data_list)
-
     return jsonify({'result': 'success'})
+
+
+
+
+def validation_reserve(uid, data_list):
+    errors = []
+    for req in data_list:
+        # Validation 1: 시간대 + item 겹침 체크
+        conflict = db.reserve.find_one({
+            "item": req["item"],
+            "start": {"$lt": req["end"]},
+            "end":   {"$gt": req["start"]},
+        })
+
+        if conflict:
+            abort(409, description=f"{req['start']} ~ {req['end']} 시간대에 이미 예약이 존재합니다.")
+
+    # Validation 2: 날짜별 2시간 초과 체크
+    request_minutes_by_date = {}
+    for req in data_list:
+        date_key = req["start"][:10]
+        start_dt = datetime.strptime(req["start"], "%Y-%m-%d %H:%M:%S")
+        end_dt   = datetime.strptime(req["end"],   "%Y-%m-%d %H:%M:%S")
+        duration = (end_dt - start_dt).seconds // 60
+        request_minutes_by_date[date_key] = request_minutes_by_date.get(date_key, 0) + duration
+
+    for date_key, req_minutes in request_minutes_by_date.items():
+        existing = list(db.reserve.find({
+            "id": uid,
+            "start": {"$regex": f"^{date_key}"}
+        }))
+
+    
+        existing_minutes = sum(
+            (datetime.strptime(doc["end"], "%Y-%m-%d %H:%M:%S") -
+             datetime.strptime(doc["start"], "%Y-%m-%d %H:%M:%S")).seconds // 60
+            for doc in existing
+        )
+
+        total = existing_minutes + req_minutes
+        if total > 120:
+            abort(400, description=f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다.")
 
 # 예약 조회
 @app.route('/reserve', methods=['GET'])
@@ -103,5 +147,11 @@ def find_reserve():
             reserve['own'] = False
     return jsonify(result = reserves)
     
+# 에러핸들러
+@app.errorhandler(409)
+@app.errorhandler(400)
+def handle_validation_error(e):
+    return jsonify({'result': 'fail', 'message': e.description}), e.code
+
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5001, debug=True)
