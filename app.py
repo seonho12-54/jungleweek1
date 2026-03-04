@@ -155,10 +155,21 @@ def find_machine(machine_type):
         {"_id": 0}  # _id 제외
     ))
 
-    # 기계에 예약이 되어있는지 유무
-    
     return jsonify(machines)
 
+# 나의 예약 정보 조회
+@app.route('/own/<machine_type>', methods=['GET'])
+@jwt_required()
+def find_own_reserve(machine_type):
+    uid = get_jwt_identity();
+    prefix = "L" if machine_type == "laundry" else "D"
+
+    reserve = db.reserve.find_one(
+        {"id":uid,
+         "item": {"$regex": f"^{prefix}"}},
+         {"_id":0}
+    )
+    return jsonify(result = reserve)
     
 # 에러핸들러
 @app.errorhandler(409)
