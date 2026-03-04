@@ -2,16 +2,39 @@ from bson import ObjectId # pymongo가 설치될 때 함께 설치됨. (install 
 from pymongo import MongoClient
 
 from flask import Flask, render_template, jsonify, request
+from flask_jwt_extended import (JWTManager, jwt_required, create_access_token, get_jwt_identity, create_refresh_token, set_access_cookies, set_refresh_cookies)
+
 from flask.json.provider import JSONProvider
 
-import json
-import sys
+from flask_bcrypt import Bcrypt
 
+from dotenv import load_dotenv 
+
+from datetime import datetime, timezone, timedelta 
+
+import json
+import os
+import hashlib 
+
+load_dotenv()
 
 app = Flask(__name__)
-
-client = MongoClient('mongodb://test:test@localhost',27017)
+jwt = JWTManager(app)
+client = MongoClient('mongodb://localhost', 27017)
 db = client.dbjungle
+
+# flask-jwt-extended 관련 변수 
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['BCRYPT_LEVEL'] = os.environ.get('BCRYPT_LEVEL')
+
+# flask-jwt-extended cookie 관련 세팅 
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False 
+app.config['JWT_ACCESS_CSRF_HEADER_NAME'] = "X-CSRF-TOKEN"
+app.config['JWT_REFRESH_CSRF_HEADER_NAME'] = "X-CSRF-TOKEN"
+
+bcrypt = Bcrypt(app)
 
 
 #####################################################################################
@@ -43,66 +66,154 @@ app.json = CustomJSONProvider(app)
 
 
 @app.route('/')
+@jwt_required(optional=True)
 def home():
-    return render_template('index.html')
+    current_user = get_jwt_identity()
+        
+    if current_user: 
+        user_info = db.users.find_one({'id': current_user}) 
+        return render_template('index.html', user_info=user_info)
+    else:
+        return render_template('index.html')
+    
 
-# 메모 생성
-@app.route('/memo', methods=['POST'])
-def create_memo():
-    title_receive = request.form['title_give']
-    content_receive = request.form['content_give']
-    
-    memo = {
-        'title': title_receive,
-        'content': content_receive,
-        'likes': 0
-    }
-    
-    db.memos.insert_one(memo)
-    
-    return jsonify({'result': 'success'})
+@app.route('/user', methods=['POST'])
+def create_user():   
+   data = request.get_json()
+   pwd = data['pwd']
+   encryptPwd = bcrypt.generate_password_hash(pwd)
+   user = {
+       'id' : data['id'],
+       'pwd' : encryptPwd,
+       'gender' : data['gender'],
+       'name' : data['name']
+   }
 
-# 메모 조회
-@app.route('/memo', methods=['GET'])
-def read_memos():
-    memos = list(db.memos.find({}))
-    memos.sort(key=lambda memo: memo['likes'], reverse= True)
-    return jsonify({'result': 'success', 'memos': memos})
+   db.users.insert_one(user)
+   return jsonify({'result': 'success'})
+    
 
-# 메모 수정
-@app.route('/memo', methods=['PUT'])
-def update_memo():
-    id_receive = request.form['id_give']
-    title_receive = request.form['title_give']
-    content_receive = request.form['content_give']
+@app.route('/login', methods=['POST'])
+def login(): 
+    try:
+        user_data = request.get_json()
+    except Exception: 
+        return jsonify({'msg': 'JSON 형식이 잘못되었습니다'}), 400
     
-    db.memos.update_one(
-        {'_id': ObjectId(id_receive)},
-        {'$set': {'title': title_receive, 'content': content_receive}}
-    )
-    
-    return jsonify({'result': 'success'})
+    user_id = user_data.get('id')
+    user_password = user_data.get("pwd")
 
-# 메모 삭제
-@app.route('/memo', methods=['DELETE'])
-def delete_memo():
-    id_receive = request.form['id_give']
-    
-    db.memos.delete_one({'_id': ObjectId(id_receive)})
-    
-    return jsonify({'result': 'success'})
+    # server side validation 
+    if not user_id: 
+        return jsonify({'msg': 'id가 비어 있습니다'}), 400
+    if not user_password:
+        return jsonify({'msg': "비밀번호가 비어 있습니다"}), 400 
+        
+    user = db.users.find_one({'id': user_id})
 
-# 좋아요
-@app.route('/memo/like', methods=['POST'])
-def like_memo():
-    id_receive = request.form['id_give']
+    if user:        
+        if bcrypt.check_password_hash(user['pwd'], user_password):
+            access_token = create_access_token(identity=user_id)
+            refresh_token = create_refresh_token(identity=user_id)
+            refresh_token_hash(user_id, refresh_token, "new")
+
+            # 쿠키 설정
+            response = jsonify({'result': 'success', 'msg': '로그인 성공'})
+            set_access_cookies(response, access_token) 
+            set_refresh_cookies(response, refresh_token)
+            
+            return response 
+        else:
+            return jsonify({'msg': '비밀번호가 틀렸습니다'}), 401 
+
+
+# client가 이미 refresh token을 가지고 있을때 받는 request 
+@app.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    # request를 보낸 유저 정보 가져오기 
+    current_user = get_jwt_identity()
     
-    db.memos.update_one(
-        {'_id': ObjectId(id_receive)},
-        {'$inc': {'likes': 1}}  
-    )
+    # 브라우저 쿠키 가져오기 
+    raw_refresh_token = request.cookies.get('refresh_token_cookie')
+    print(raw_refresh_token)
+    # 현재 유저의 refresh token을 가져오기 
+    stored_token_data = db.refresh_tokens.find_one({'user_id': current_user})  
+
+    if not stored_token_data: 
+        return jsonify({'msg: 다시 로그인 하세요'}), 401 
+        
+    salt = stored_token_data['salt']
+
+    # 클라이언트가 보낸 Raw 토큰과 합쳐서 해시 생성             
+    sha256_hash = hashlib.sha256()
+    combined_string = raw_refresh_token + salt 
+    sha256_hash.update(combined_string.encode('utf-8'))            
+    current_hash_result = sha256_hash.hexdigest()
+
+    # 유저가 가지고 있는 refresh token과 비교 
+    if stored_token_data['refresh_token'] == current_hash_result: 
+        access_token = create_access_token(identity=current_user)
+        new_refresh_token = refresh_token_key_rotation(current_user)
+
+        # 새로운 refresh token 쿠키에 업데이트 
+        response = jsonify({'result': 'success'})
+
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, new_refresh_token)
+
+        return response 
+    else:         
+        return jsonify({'msg': '접근 권한이 없습니다.'}), 401 
+
+# refresh 토큰 암호화 (SHA-256 + salt)
+def refresh_token_hash(user_id, refresh_token, type): 
+    salt = os.urandom(16).hex()
+            
+    sha256_hash = hashlib.sha256()
+    combined_string = refresh_token + salt 
+    sha256_hash.update(combined_string.encode('utf-8'))            
+    hash_result = sha256_hash.hexdigest()
+
+    time_now = datetime.now(timezone.utc) 
     
-    return jsonify({'result': 'success'})
+    refresh_token_hashed = {
+        'user_id': user_id, 
+        'refresh_token': hash_result, 
+        'salt': salt, 
+        'issued_at': time_now,  
+        'expires_at': time_now + timedelta(days=7)
+    }               
+
+    # 처음 로그인 할때 new 
+    # key rotation 할때 update 
+    if type == "new":
+        db.refresh_tokens.insert_one(refresh_token_hashed) 
+    elif type == "update":
+        db.refresh_tokens.update_one(
+            {
+                'user_id': user_id 
+            }, 
+            {
+                '$set': {
+                    'refresh_token': hash_result, 
+                    'salt': salt, 
+                    'issued_at': time_now,  
+                    'expires_at': time_now + timedelta(days=7)
+                }
+            }
+        )
+
+# refresh token rotation으로 한번 사용한 token 폐기 
+def refresh_token_key_rotation(user_id): 
+    refresh_token = create_refresh_token(identity=user_id)
+    refresh_token_hash(user_id, refresh_token, "update")
+    return refresh_token 
+ 
+def db_setup_ttl_indexes(): 
+    db.refresh_tokens.create_index("issued_at", expireAfterSeconds=604800)
 
 if __name__ == '__main__':
-    app.run('0.0.0.0', port=5000, debug=True)
+    db_setup_ttl_indexes()
+    app.run('0.0.0.0', port=5001, debug=True)
+    
