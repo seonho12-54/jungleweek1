@@ -28,10 +28,69 @@
     </div>
   </header>
 
+
+
+
+<!--여기는 세탁기 렌더링-->
+
+
   <h1 class="text-4xl font-bold text-center mb-10">세탁기</h1>
-  
   <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
+
+    {%if current_user.gender = 'M' %}  1~7까지
+        {% for item in items[:7] %}
+          <button 
+            {% if item.ban or item.using %}
+              disabled
+            {% else %}
+              onclick="location.href='time.html'"
+            {% endif %}
+            class="
+            {% if item.ban %}
+              bg-gray-400 cursor-not-allowed text-gray-700
+            {% elif item.using %}
+              bg-red-400 cursor-not-allowed
+            {% else %}
+              bg-blue-500 hover:bg-blue-400 active:translate-y-1 active:shadow-sm
+            {% endif %}
+            rounded-xl shadow-md p-12 text-center text-lg font-semibold
+            transform transition duration-100 text-white"
+          >
+
+
     {% for item in items %}
+      <button 
+        {% if item.ban or item.using %}
+          disabled
+        {% else %}
+          onclick="location.href='time.html'"
+        {% endif %}
+        class="
+        {% if item.ban %}
+          bg-gray-400 cursor-not-allowed text-gray-700
+        {% elif item.using %}
+          bg-red-400 cursor-not-allowed
+        {% else %}
+          bg-blue-500 hover:bg-blue-400 active:translate-y-1 active:shadow-sm
+        {% endif %}
+        rounded-xl shadow-md p-12 text-center text-lg font-semibold
+        transform transition duration-100 text-white"
+      >
+      🫧 {{ item.item }}
+        {% if item.ban %}
+          <div class="text-sm mt-3">🚫 사용불가</div>
+        {% elif item.using %}
+          <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
+        {% else %}
+          <div class="text-sm mt-3">✅ 사용가능</div>
+        {% endif %}
+      </button>
+
+    {% endfor %}
+
+    {% elif current_user.gender == 'F' %}
+
+    {% for item in items[5:9] %}
       <button 
         {% if item.ban or item.using %}
           disabled
@@ -59,13 +118,54 @@
         {% endif %}
       </button>
     {% endfor %}
+
+    
+      {% else %}
+
+    {% for item in items[:9] %}
+      <button 
+        {% if item.ban or item.using %}
+          disabled
+        {% else %}
+          onclick="location.href='time.html'"
+        {% endif %}
+        class="
+        {% if item.ban %}
+          bg-gray-400 cursor-not-allowed text-gray-700
+        {% elif item.using %}
+          bg-red-400 cursor-not-allowed
+        {% else %}
+          bg-blue-500 hover:bg-blue-400 active:translate-y-1 active:shadow-sm
+        {% endif %}
+        rounded-xl shadow-md p-12 text-center text-lg font-semibold
+        transform transition duration-100 text-white"
+      >
+        🫧 {{ item.item }}
+        {% if item.ban %}
+          <div class="text-sm mt-3">🚫 사용불가</div>
+        {% elif item.using %}
+          <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
+        {% else %}
+          <div class="text-sm mt-3">✅ 사용가능</div>
+        {% endif %}
+      </button>
+    {% endfor %}
+
+{% endif %}
+    
   </div>
+
+
+
+<!--신고하기 버튼입니다-->
 
   <div class="flex justify-center mt-10 mb-20">
     <button onclick="OpenReport()" class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
       신고하기
     </button>
   </div>
+
+
 
   <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
@@ -88,6 +188,8 @@
       </form>
     </div>
   </div>
+
+
 
   <div id="reportmodal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
@@ -121,6 +223,27 @@
   </div>
 
   <script>
+    // --- 세탁기 정보 불러오기  ---
+    function updateUI(machineData) {
+      let itemName = machineData.item;   // 예: "L1"
+      let isUsing = machineData.using;   // 예: true
+      let isBanned = machineData.ban;    // 예: false
+      let machineId = machineData._id;   // 예: ""
+    }
+     $.ajax({
+    type: "GET", 
+    url: "/machine/laundry", 
+   success: function(response) {
+           response.forEach(function(machine) {
+            updateUI(machine)
+          });
+    },
+    error: function(xhr) { 
+        alert("데이터를 가져오는 중 오류가 발생했습니다."); 
+    }
+});
+
+
     // --- 로그인 모달 스크립트 ---
     function OpenLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
@@ -165,7 +288,6 @@
     // --- 신고 post ---
     $('#reportForm').submit(function(e) {
       e.preventDefault(); 
-      
       const selectedMachine = $('#machineselect').val();
       const now = new Date().toLocaleString('ko-KR');
 
