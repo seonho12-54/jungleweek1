@@ -209,7 +209,7 @@
 <div id="reportmoal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
       <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택</h2>
-      <form method ="POST" action="/report">
+      <form method ="POST" action="/report" onsubmit="setTime()">
               <div class="mb-4">      
                   <label class="block mb-1 text-sm"></label>
               </div>
@@ -252,6 +252,18 @@
     }
     function CloseReport() {
       document.getElementById("reportmoal").classList.add("hidden");
+    }
+  </script>
+
+  <script>
+    function setTime() {
+      // 1. 현재 시간을 구합니다.
+      const now =new Date()
+      // 2. 한국 시간 기준으로 보기 좋게 문자열로 만듭니다. (예: 2026. 3. 5. 오후 3:18:00)
+      const timeString = now.toLocaleString('ko-KR');
+      
+      // 3. 숨겨둔 hidden 칸의 value에 이 시간을 쏙 넣어줍니다.
+      document.getElementById('hidden_time').value = timeString;
     }
   </script>
 
