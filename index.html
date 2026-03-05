@@ -145,11 +145,11 @@
 {% if is_logged_in %}
 
     <div class="w-full max-w-4xl h-24 bg-gray-300 rounded-xl shadow-lg flex items-center p-4 gap-4 mt-6">
-        <button onclick="updateInfo('{{washer_res.id}}, {{washer_res.start}}')"class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
+        <button onclick="updateInfo('{{washer_res.id}}, {{washer_res.end}} ~ {{ dryer_res.period }}')"class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
           <img src="./세탁기.png" class="h-8 w-8" alt="세탁기">
         </button>
 
-       <button onclick="updateInfo('{{ dryer_res.id }}', '{{ dryer_res.start }} {{ dryer_res.period }}')" 
+       <button onclick="updateInfo('{{ dryer_res.id }}', '{{ dryer_res.end }} ~ {{ dryer_res.period }}')" 
             class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
         <img src="./건조기.png" class="h-8 w-8" alt="건조기">
          </button>

@@ -19,7 +19,7 @@
        
     </button>
 
-    <button onclick="openModal()" class="border border-blue-500 text-blue-600 px-6 py-2 rounded">
+    <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2 rounded">
       로그인
     </button>
   </header>
@@ -30,33 +30,37 @@
   <!-- 카드 영역 -->
   <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
 
-    <!-- 대기중 카드 -->
-    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>
-    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">  🫧 남성용 세탁기 2
-    </button>
-    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">  🫧 남성용 세탁기 3
-    </button>    
-    
-    <!-- 사용중 카드 -->
+ <!-- 사용중 카드 
     <button class="bg-red-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-300 active:translate-y-1 active:shadow-sm
                transform transition duration-100">  🫧 남성용 세탁기 4
      <div class="text-sm mt-3">⏱ 사용경과 : 00:58:34</div>
+    </button> 
+ -->
+
+    <!-- 대기중 카드 -->
+    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
+    </button>
+    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
+    </button>
+    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
+    </button>    
+    
+    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
+    </button>
+    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
     </button>  
 
-    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">  🫧 남성용 세탁기 5
+   <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
     </button>  
 
-    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">  🫧 공용 세탁기 6
-    </button>  
-
-   <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 공용 세탁기 7
+   <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
     </button>  
   </div>
   <div class="flex justify-center mt-10 mb-20">
@@ -64,7 +68,7 @@
                transform transition duration-100">     신고하기
       </button>
   </div>
-
+        
 <!--
   
 
@@ -106,43 +110,52 @@
 
 
   
-  <!-- 로그인 모달 -->
-  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+   <!-- 로그인 모달 -->
+ <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
     
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
-      <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
-
+      <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
+      <form method ="POST" action="/login">
+        
+    <!-- 아이디 -->
       <div class="mb-4">
-        <label class="block mb-1 text-sm">Email</label>
-        <input type="email" class="w-full border rounded px-3 py-2">
+        <label class="block mb-1 text-sm">ID</label>
+        
+        <input type="text" name="id" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
       </div>
-
+      
+   <!-- 비밀번호 -->
       <div class="mb-6">
         <label class="block mb-1 text-sm">Password</label>
-        <input type="password" class="w-full border rounded px-3 py-2">
+        <input type="password" name="pwd" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
       </div>
-
-      <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+      
+      
+      <button type ="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
         로그인
       </button>
 
-      <button onclick="closeModal()" class="w-full mt-3 text-gray-500">
+      <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
         닫기
       </button>
+
+      </form>
     </div>
 
+
+    
   </div>
 
 
-<script>
-  function openModal() {
-    document.getElementById("loginModal").classList.remove("hidden");
-  }
 
-  function closeModal() {
-    document.getElementById("loginModal").classList.add("hidden");
-  }
-</script>
+  <script>
+    function OpenLogin() {
+      document.getElementById("loginModal").classList.remove("hidden");
+    }
+    function CloseLogin() {
+      document.getElementById("loginModal").classList.add("hidden");
+    }
+  </script>
 
 </body>
 </html>
