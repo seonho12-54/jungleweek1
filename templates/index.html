@@ -1,122 +1,146 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-  <!-- 여긴 임포트입니다-->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>누가돌려?</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
+  <head>
+    <!-- 여긴 임포트입니다-->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>누가돌려?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
 
-
-<body class="h-screen bg-gray-100 flex flex-col items-center justify-center">
-
-
-
-  
-<header class="flex">
-   
-      </div>
-    <button  onclick="location.href='signup.html'" class=" border border-blue-500 text-blue-600 px-6 py-2">
-        회원가입
-    </button>
-    <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2">
-      로그인
-    </button>
-  </header>
-  <h1 class="text-5xl font-bold text-blue-600">
-    누가돌려? made by tailwind    
-  </h1>
-  <div class="w-2/3 h-1/2 bg-gray-300 rounded-xl shadow-lg flex items-center justify-center gap-10 p-10">
-
-
-
-
-  <!-- 바디는 중앙으로 위치하게끔 함-->
-  
-    <!-- 흰 박스 1 -->
-    <button onclick="location.href='laundry.html'" class="w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-        <img src="./세탁기.png" class="h-40">
-        <div class="p-1 text-middle">
-          <h2 class="text-xl font-bold mb-2">세탁기</h2>
-        </div>
-    </button>
-
-    <!-- 흰 박스 2 -->
-    <button onclick="location.href='drying machine.html'" class="w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-        <img src="./건조기.png" class="h-40">
-        <div class="p-1 text-middle">
-          <h2 class="text-xl font-bold mb-2">건조기</h2>
-        </div>
-    </button>
-
-  </div>
-
-
-   <!-- 로그인 모달 -->
- <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-    
-    <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
-      <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
-      <form>
-      <div class="mb-4">
-        <label class="block mb-1 text-sm">ID</label>
-        <input type="email" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
-      </div>
-      <div class="mb-6">
-        <label class="block mb-1 text-sm">Password</label>
-        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
-      </div>
-      <button type ="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+  <body class="h-screen bg-gray-100 flex flex-col items-center justify-center">
+    <header class="flex">
+      <button
+        onclick="OpenLogin()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+      >
         로그인
       </button>
-      <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
-        닫기
-      </button>
-      </form>
+    </header>
+
+    <div
+      class="w-2/3 h-1/2 bg-gray-300 rounded-xl shadow-lg flex items-center justify-center gap-10 p-10"
+    >
+      <!-- 바디는 중앙으로 위치하게끔 함-->
+
+      <!-- 흰 박스 1 -->
+      <a
+        href="{{ url_for('find_machine', machine_type='laundry') }}"
+        class="flex flex-col items-center justify-center p-6 w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+      >
+        <img
+          src="{{ url_for('static', filename='images/세탁기.png') }}"
+          class="h-32 w-auto object-contain mb-4"
+        />
+
+        <div class="text-center">
+          <h2 class="text-xl font-bold text-gray-800">세탁기</h2>
+        </div>
+      </a>
+
+      <!-- 흰 박스 2 -->
+      <a
+        href="{{ url_for('find_machine', machine_type='laundry') }}"
+        class="flex flex-col items-center justify-center p-6 w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+      >
+        <img
+          src="{{ url_for('static', filename='images/건조기.png') }}"
+          class="h-32 w-auto object-contain mb-4"
+        />
+
+        <div class="text-center">
+          <h2 class="text-xl font-bold text-gray-800">건조기</h2>
+        </div>
+      </a>
     </div>
-    
-  </div>
 
+    <!-- 로그인 모달 -->
+    <div
+      id="loginModal"
+      class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
+    >
+      <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+        <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
+        <form>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm">ID</label>
+            <input
+              type="email"
+              class="w-full border rounded px-3 py-2"
+              placeholder="아이디를 입력하세요"
+              required
+            />
+          </div>
+          <div class="mb-6">
+            <label class="block mb-1 text-sm">Password</label>
+            <input
+              type="password"
+              class="w-full border rounded px-3 py-2"
+              placeholder="비밀번호를 입력하세요"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          >
+            로그인
+          </button>
+          <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
+            닫기
+          </button>
+        </form>
+      </div>
+    </div>
 
+    <script>
+      function OpenLogin() {
+        document.getElementById("loginModal").classList.remove("hidden")
+      }
+      function CloseLogin() {
+        document.getElementById("loginModal").classList.add("hidden")
+      }
+    </script>
 
-  <script>
-    function OpenLogin() {
-      document.getElementById("loginModal").classList.remove("hidden");
-    }
-    function CloseLogin() {
-      document.getElementById("loginModal").classList.add("hidden");
-    }
-  </script>
+    <!--나의 예약정보를 가져오고 세탁기누르면 세탁 정보 건조기 누르면 건조기정보 아이디와 예약시간을 넣는다-->
+    <div
+      class="w-2/3 h-1/10 bg-gray-300 rounded-xl shadow-lg mt-6 flex gap-10 p-10 y-6"
+    >
+      <button
+        onclick="location.href = '내 세탁기 정보'"
+        class="w-1/10 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+      >
+        <img
+          src="{{ url_for('static', filename='images/세탁기.png') }}"
+          class="h-10"
+        />
+      </button>
 
-
-<!--나의 예약정보를 가져오고 세탁기누르면 세탁 정보 건조기 누르면 건조기정보 아이디와 예약시간을 넣는다-->
-<div class="w-2/3 h-1/10 bg-gray-300 rounded-xl shadow-lg mt-6 flex gap-10 p-10 y-6">
-  
-  <button onclick="location.href='내 세탁기 정보'" class="w-1/10 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-        <img src="./세탁기.png" class="h-10">
-  </button>
-
-
-  <button onclick="location.href='내 세탁기 정보'" class="w-1/10 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-        <img src="./건조기.png" class="h-10">
-  </button>
-    <button class="w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-        <img src="./사용자.png" class="h-10">
-    </button>
-  <button class="w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
-        <img src="./예약시간.png" class="h-10">
-    </button>
-
-</div>
-
-
-
-</body>
-
-
-
-
-
-
+      <button
+        onclick="location.href = '내 세탁기 정보'"
+        class="w-1/10 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+      >
+        <img
+          src="{{ url_for('static', filename='images/건조기.png') }}"
+          class="h-10"
+        />
+      </button>
+      <button
+        class="w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+      >
+        <img
+          src="{{ url_for('static', filename='images/사용자.png') }}"
+          class="h-10"
+        />
+      </button>
+      <button
+        class="w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+      >
+        <img
+          src="{{ url_for('static', filename='images/예약시간.png') }}"
+          class="h-10"
+        />
+      </button>
+    </div>
+  </body>
 </html>

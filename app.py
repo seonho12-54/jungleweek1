@@ -75,7 +75,21 @@ def home():
         return render_template('index.html', user_info=user_info)
     else:
         return render_template('index.html')
+
+# 세탁기/건조기 조회
+@app.route('/machine/<machine_type>', methods=['GET'])
+def find_machine(machine_type):
+    prefix = "L" if machine_type == "laundry" else "D"
+
+    # item이 prefix로 시작하는 machine 목록 조회
+    machines = list(db.machine.find(
+        {"item": {"$regex": f"^{prefix}"}},
+        {"_id": 0}  # _id 제외
+    ))
+
+    # 기계에 예약이 되어있는지 유무
     
+    return jsonify(machines)
 
 @app.route('/user', methods=['POST'])
 def create_user():   
@@ -214,9 +228,9 @@ def refresh_token_key_rotation(user_id):
     refresh_token_hash(user_id, refresh_token, "update")
     return refresh_token 
  
+# 토큰 삭제 예약으로 db 과부하 방지
 def db_setup_ttl_indexes(): 
     db.refresh_tokens.create_index("expires_at", expireAfterSeconds=0)
-
 
 if __name__ == '__main__':
     db_setup_ttl_indexes()
