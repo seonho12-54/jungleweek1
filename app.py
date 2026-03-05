@@ -95,6 +95,10 @@ def home():
 def create_user():
     data = request.get_json()
     pwd = data["pwd"]
+    # 해당 아이디로 이미 존재하는지 확인
+    if db.users.find_one({"id": data["id"]}):
+        abort(409, description="이미 존재하는 id입니다.")
+
     encryptPwd = bcrypt.generate_password_hash(pwd)
     user = {
         "id": data["id"],
@@ -106,6 +110,18 @@ def create_user():
 
     db.users.insert_one(user)
     return jsonify({"result": "success"})
+
+
+# id 중복확인
+@app.route("/user/check-id", methods=["POST"])
+def check_id():
+    data = request.get_json()
+    user_id = data["id"]
+
+    if db.users.find_one({"id": user_id}):
+        abort(409, description="이미 존재하는 id입니다.")
+    else:
+        return jsonify({"result": "success", "message": "사용 가능한 id입니다."})
 
 
 @app.route("/login", methods=["POST"])
