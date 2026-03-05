@@ -70,7 +70,8 @@ def create_user():
        'id' : data['id'],
        'pwd' : encryptPwd,
        'gender' : data['gender'],
-       'name' : data['name']
+       'name' : data['name'],
+       'role' : 'user'
    }
 
    db.users.insert_one(user)
@@ -161,7 +162,7 @@ def find_machine(machine_type):
 @app.route('/own/<machine_type>', methods=['GET'])
 @jwt_required()
 def find_own_reserve(machine_type):
-    uid = get_jwt_identity();
+    uid = get_jwt_identity()
     prefix = "L" if machine_type == "laundry" else "D"
 
     reserve = db.reserve.find_one(
@@ -170,10 +171,24 @@ def find_own_reserve(machine_type):
          {"_id":0}
     )
     return jsonify(result = reserve)
+
+# 신고 목록 조회 
+@app.route('/report', methods=['GET'])
+@jwt_required()
+def find_report():
+    uid = get_jwt_identity()
+    user = db.users.find_one({"id":uid})
+    if user.get('role') != 'ADMIN' :
+        abort(403, description='관리자 권한이 아닙니다.')
+    
+    report = list(db.report.find())
+    return jsonify(result=report)
     
 # 에러핸들러
 @app.errorhandler(409)
 @app.errorhandler(400)
+@app.errorhandler(401)
+@app.errorhandler(403)
 def handle_validation_error(e):
     return jsonify({'result': 'fail', 'message': e.description}), e.code
 
