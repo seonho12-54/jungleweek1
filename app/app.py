@@ -34,7 +34,7 @@ load_dotenv()
 app = Flask(__name__)
 jwt = JWTManager(app)
 database_url = os.environ.get("DATABASE_URL")
-client = MongoClient(database_url, 27017)
+client = MongoClient("mongodb://localhost:27017")
 db = client.dbjungle
 
 # flask-jwt-extended 관련 변수
@@ -129,7 +129,7 @@ def check_id():
 
 
 @app.route("/login", methods=["POST"])
-def login():
+def login():    
     try:
         user_data = request.get_json()
     except Exception:
@@ -145,9 +145,10 @@ def login():
         abort(400, description="비밀번호가 비어 있습니다.")
 
     user = db.users.find_one({"id": user_id})
-
+    print(user)
     if user:
         if bcrypt.check_password_hash(user.get("pwd"), user_password):
+            print("inside bcrypt")
             access_token = create_access_token(identity=user_id)
             refresh_token = create_refresh_token(identity=user_id)
             refresh_token_hash(user_id, refresh_token, "new")
@@ -166,6 +167,7 @@ def login():
 @jwt_required(optional=True)
 def logout():
     current_user = get_jwt_identity()
+
     response = jsonify({"result": "success"})
 
     # refresh token을 db에서 삭제

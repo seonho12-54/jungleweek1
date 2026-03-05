@@ -35,12 +35,21 @@
       />
     </a>
     <header class="flex">
+      {% if user_info %}
       <button
-        onclick="OpenLogin()"
+        onclick="doLogout()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+      >
+        로그아웃
+      </button>
+      {% else %}
+      <button
+        onclick="openLogin()"
         class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
         로그인
       </button>
+      {% endif %}
     </header>
 
     <div
@@ -74,14 +83,6 @@
     </div>
 
     {% include 'modal.html' %}
-    <script>
-      function OpenLogin() {
-        document.getElementById("loginModal").classList.remove("hidden")
-      }
-      function CloseLogin() {
-        document.getElementById("loginModal").classList.add("hidden")
-      }
-    </script>
 
     <!--나의 예약정보를 가져오고 세탁기누르면 세탁 정보 건조기 누르면 건조기정보 아이디와 예약시간을 넣는다-->
     <div
@@ -123,5 +124,66 @@
         />
       </button>
     </div>
+
+    <script>
+      // 로그인
+      $("#login-button").on("click", function (e) {
+        e.preventDefault()
+
+        const userId = $("#id").val()
+        const password = $("#pwd").val()
+
+        $.ajax({
+          type: "POST",
+          url: "/login",
+          contentType: "application/json",
+          data: JSON.stringify({
+            id: userId,
+            pwd: password,
+          }),
+          success: function (response) {
+            closeLogin()
+            window.location.reload()
+          },
+        })
+      })
+      function openLogin() {
+        document.getElementById("loginModal").classList.remove("hidden")
+      }
+
+      function closeLogin() {
+        document.getElementById("loginModal").classList.add("hidden")
+      }
+
+      function getCookie(name) {
+        const value = `; ${document.cookie}`
+        const parts = value.split(`; ${name}=`)
+        if (parts.length === 2) return parts.pop().split(";").shift()
+        return ""
+      }
+
+      function doLogout() {
+        const csrf = getCookie("csrf_access_token")
+        console.log(csrf)
+        $.ajax({
+          type: "POST",
+          url: "/logout",
+          xhrFields: {
+            withCredentials: true,
+          },
+          headers: {
+            "X-CSRF-TOKEN": csrf,
+          },
+          success: function (response) {
+            if (response.result === "success") {
+              window.location.reload()
+            }
+          },
+          error: function (xhr) {
+            alert("로그아웃 처리 중 문제가 발생했습니다.")
+          },
+        })
+      }
+    </script>
   </body>
 </html>
