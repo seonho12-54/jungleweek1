@@ -46,6 +46,7 @@
               onclick="location.href='time.html'"
             {% endif %}
             class="
+            flex flex-col items-center justify-center
             {% if item.ban %}
               bg-gray-400 cursor-not-allowed text-gray-700
             {% elif item.using %}
@@ -56,38 +57,17 @@
             rounded-xl shadow-md p-12 text-center text-lg font-semibold
             transform transition duration-100 text-white"
           >
+          <img src="./세탁기.png" class="w-16 mb-3">
 
-
-    {% for item in items %}
-      <button 
-        {% if item.ban or item.using %}
-          disabled
-        {% else %}
-          onclick="location.href='time.html'"
-        {% endif %}
-        class="
-        {% if item.ban %}
-          bg-gray-400 cursor-not-allowed text-gray-700
-        {% elif item.using %}
-          bg-red-400 cursor-not-allowed
-        {% else %}
-          bg-blue-500 hover:bg-blue-400 active:translate-y-1 active:shadow-sm
-        {% endif %}
-        rounded-xl shadow-md p-12 text-center text-lg font-semibold
-        transform transition duration-100 text-white"
-      >
-      🫧 {{ item.item }}
-        {% if item.ban %}
-          <div class="text-sm mt-3">🚫 사용불가</div>
-        {% elif item.using %}
-          <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
-        {% else %}
-          <div class="text-sm mt-3">✅ 사용가능</div>
-        {% endif %}
-      </button>
-
-    {% endfor %}
-
+          🫧 {{ item.item }}
+          {% if item.ban %}
+            <div class="text-sm mt-3">🚫 사용불가</div>
+          {% elif item.using %}
+            <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
+          {% else %}
+            <div class="text-sm mt-3">✅ 사용가능</div>
+          {% endif %}
+        </button>
     {% elif current_user.gender == 'F' %}
 
     {% for item in items[5:9] %}
@@ -98,6 +78,7 @@
           onclick="location.href='time.html'"
         {% endif %}
         class="
+        flex flex-col items-center justify-center
         {% if item.ban %}
           bg-gray-400 cursor-not-allowed text-gray-700
         {% elif item.using %}
@@ -108,6 +89,8 @@
         rounded-xl shadow-md p-12 text-center text-lg font-semibold
         transform transition duration-100 text-white"
       >
+      <img src="./세탁기.png" class="w-16 mb-3">
+
         🫧 {{ item.item }}
         {% if item.ban %}
           <div class="text-sm mt-3">🚫 사용불가</div>
@@ -130,6 +113,7 @@
           onclick="location.href='time.html'"
         {% endif %}
         class="
+        flex flex-col items-center justify-center
         {% if item.ban %}
           bg-gray-400 cursor-not-allowed text-gray-700
         {% elif item.using %}
@@ -140,6 +124,8 @@
         rounded-xl shadow-md p-12 text-center text-lg font-semibold
         transform transition duration-100 text-white"
       >
+      <img src="./세탁기.png" class="w-16 mb-3">
+
         🫧 {{ item.item }}
         {% if item.ban %}
           <div class="text-sm mt-3">🚫 사용불가</div>
