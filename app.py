@@ -141,7 +141,6 @@ def logout():
 
     return response 
 
-    
 
 # client가 이미 refresh token을 가지고 있을때 받는 request 
 @app.route('/refresh', methods=['POST'])
