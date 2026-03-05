@@ -47,6 +47,7 @@ app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
 app.config["JWT_COOKIE_CSRF_PROTECT"] = True
 app.config["JWT_ACCESS_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
 app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
+app.config["JWT_COOKIE_SECURE"] = True 
 
 bcrypt = Bcrypt(app)
 
