@@ -1,23 +1,112 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-  <!-- 여긴 임포트입니다-->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>누가돌려?</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
+  <head>
+    <!-- 여긴 임포트입니다-->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>누가돌려?</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Pretendard", "sans-serif"],
+            },
+          },
+        },
+      }
+    </script>
+  </head>
 
-<!-- 상단 네비 -->
+  <!-- 상단 네비 -->
   <header class="flex justify-between items-center p-6">
-    <button onclick="location.href='index.html'" class="flex items-center gap-2 text-xl font-bold">
-       <span>🫧누가돌려?</span>
+    <button
+      onclick="location.href = 'index.html'"
+      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    >
+      <img
+        src="{{ url_for('static', filename='images/로고.png') }}"
+        class="h-16 w-auto"
+      />
     </button>
   </header>
-<body class="h-screen bg-gray-100 flex flex-col items-center justify-center">
+  <body>
+    <div class="flex flex-col justify-center sm:h-screen p-4">
+      <div
+        class="max-w-md w-full mx-auto border border-gray-300 rounded-2xl p-8"
+      >
+        <div class="text-center mb-12">
+          <a href="javascript:void(0)"
+            ><img
+              src="{{ url_for('static', filename='images/로고.png') }}"
+              alt="logo"
+              class="w-40 inline-block"
+            />
+          </a>
+        </div>
 
+        <form>
+          <div class="space-y-6">
+            <div>
+              <label class="text-slate-900 text-sm font-medium mb-2 block"
+                >아이디</label
+              >
+              <input
+                name="email"
+                type="text"
+                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                placeholder="아이디를 입력하세요"
+              />
+            </div>
+            <div>
+              <label class="text-slate-900 text-sm font-medium mb-2 block"
+                >비밀번호</label
+              >
+              <input
+                name="password"
+                type="password"
+                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                placeholder="비밀번호를 입력하세요"
+              />
+            </div>
+            <div>
+              <label class="text-slate-900 text-sm font-medium mb-2 block"
+                >비밀번호 확인</label
+              >
+              <input
+                name="cpassword"
+                type="password"
+                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                placeholder="비밀번호를 한번 더 입력하세요"
+              />
+            </div>
+          </div>
 
-  <div class="w-2/3 h-2/5 bg-gray-300 rounded-xl shadow-lg  gap-10 p-10">
+          <div class="mt-12">
+            <button
+              type="button"
+              class="w-full py-3 px-4 text-sm tracking-wider font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer"
+            >
+              계정 생성
+            </button>
+          </div>
+          <p class="text-slate-600 text-sm mt-6 text-center">
+            계정이 이미 있으신가요?
+            <a
+              href="javascript:void(0);"
+              class="text-blue-600 font-medium hover:underline ml-1"
+              >로그인</a
+            >
+          </p>
+        </form>
+      </div>
+
+    <!-- <div class="w-2/3 h-2/5 bg-gray-300 rounded-xl shadow-lg  gap-10 p-10">
     <form>
     <div class="mb-4">
         <label class="block mb-1 text-sm">ID</label>
@@ -51,6 +140,6 @@
         </button>
     </form>
 
-  </div>
-
-</body>
+  </div> -->
+  </body>
+</html>
