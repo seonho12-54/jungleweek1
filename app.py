@@ -136,7 +136,7 @@ def refresh():
     
     # 브라우저 쿠키 가져오기 
     raw_refresh_token = request.cookies.get('refresh_token_cookie')
-    print(raw_refresh_token)
+
     # 현재 유저의 refresh token을 가져오기 
     stored_token_data = db.refresh_tokens.find_one({'user_id': current_user})  
 
