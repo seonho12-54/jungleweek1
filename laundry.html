@@ -5,55 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>누가돌려?</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
-
-
 
 <body class="bg-gray-100 min-h-screen">
 
-  <!-- 상단 네비 -->
   <header class="flex justify-between items-center p-6">
     <button onclick="location.href='index.html'" class="flex items-center gap-2 text-xl font-bold">
-       <span>🫧누가돌려?</span>
-
-       
+        <span>🫧누가돌려?</span>
     </button>
 
-    <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2 rounded">
-      로그인
-    </button>
-    
+    <div>
+      {% if user_info %}
+      <button onclick="doLogout()" class="bg-red-500 text-white px-4 py-2 rounded">
+        로그아웃
+      </button>
+      {% else %}
+      <button onclick="OpenLogin()" class="bg-blue-500 text-white px-4 py-2 rounded">
+        로그인
+      </button>
+      {% endif %}
+    </div>
   </header>
 
-  <!-- 타이틀 -->
   <h1 class="text-4xl font-bold text-center mb-10">세탁기</h1>
-
-  <!-- 카드 영역 -->
+  
   <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
-
- <!-- 사용중 카드 
-    <button class="bg-red-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-300 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">  🫧 남성용 세탁기 4
-     <div class="text-sm mt-3">⏱ 사용경과 : 00:58:34</div>
-    </button> 
- -->
-
-
-
-  <!-- 타이틀 -->
-  <h1 class="text-4xl font-bold text-center mb-10"세탁기</h1>
-
-<!--대기중인카드 진자2코드-->
-
-
-<div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
-  {%for item in items %}
-    <button 
-      {% if item.ban or item.using %}
-        disabled
-        {%else%}
-        onclick = "location.href='time.html'"
-        {%endif%}
+    {% for item in items %}
+      <button 
+        {% if item.ban or item.using %}
+          disabled
+        {% else %}
+          onclick="location.href='time.html'"
+        {% endif %}
         class="
         {% if item.ban %}
           bg-gray-400 cursor-not-allowed text-gray-700
@@ -63,210 +47,152 @@
           bg-blue-500 hover:bg-blue-400 active:translate-y-1 active:shadow-sm
         {% endif %}
         rounded-xl shadow-md p-12 text-center text-lg font-semibold
-        transform transition duration-100 text-white
-        "
-        >
-      🫧 {{ item.item }}
-      {% if item.ban %}
-        <div class="text-sm mt-3">🚫 사용불가</div>
-      {% elif item.using %}
-        <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
-      {% else %}
-        <div class="text-sm mt-3">✅ 사용가능</div>
-      {% endif %}
-    </button>
-      {% endfor %}
+        transform transition duration-100 text-white"
+      >
+        🫧 {{ item.item }}
+        {% if item.ban %}
+          <div class="text-sm mt-3">🚫 사용불가</div>
+        {% elif item.using %}
+          <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
+        {% else %}
+          <div class="text-sm mt-3">✅ 사용가능</div>
+        {% endif %}
+      </button>
+    {% endfor %}
   </div>
 
-  
-    <div class="flex justify-center mt-10 mb-20">
-      <button onclick="OpenReport()" class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
+  <div class="flex justify-center mt-10 mb-20">
+    <button onclick="OpenReport()" class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
       신고하기
     </button>
-    </div>
-
-      </button>
-
-
-</div>
-
-
-
-
-
-    <!-- 대기중 카드 
-    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>
-    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>
-    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>    
-    
-    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>
-    <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>  
-
-   <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>  
-
-   <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">   🫧 남성용 세탁기 1
-    </button>  
   </div>
-  <div class="flex justify-center mt-10 mb-20">
-  <button class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-700 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">     신고하기
-      </button>
-  </div>
-        -->
-<!--
-  
 
-<div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
-
-{% for item in items %}
-
-  <button 
-    class="
-      {% if item.using == 'true' %}
-        bg-red-400 hover:bg-red-300
-      {% else %}
-        bg-green-400 hover:bg-green-500
-      {% endif %}
-      rounded-xl shadow-md p-12 text-center text-lg font-semibold
-      active:translate-y-1 active:shadow-sm
-      transform transition duration-100
-
-    "
-  >
-
-    🫧 {{ item.items }}
-
-    {% if item.using == 'true' %}
-      <div class="text-sm mt-3">
-        ⏱ 사용경과 : {{ item.elapsed }}
-      </div>
-    {% endif %}
-
-  </button>
-
-{% endfor %}
-
-</div>
-
-
-
--->
-
-
-  
-
-
-
-   <!-- 로그인 모달 -->
- <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-    
+  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
       <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
-      <form method ="POST" action="/login">
-        
-    <!-- 아이디 -->
-      <div class="mb-4">
-        <label class="block mb-1 text-sm">ID</label>
-        
-        <input type="text" name="id" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
-      </div>
-      
-   <!-- 비밀번호 -->
-      <div class="mb-6">
-        <label class="block mb-1 text-sm">Password</label>
-        <input type="password" name="pwd" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
-      </div>
-      
-      
-      <button type ="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-        로그인
-      </button>
-
-      <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
-        닫기
-      </button>
-
+      <form id="loginForm">
+        <div class="mb-4">
+          <label class="block mb-1 text-sm">ID</label>
+          <input type="text" id="id" class="w-full border rounded px-3 py-2" required>
+        </div>
+        <div class="mb-6">
+          <label class="block mb-1 text-sm">Password</label>
+          <input type="password" id="pwd" class="w-full border rounded px-3 py-2" required>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+          로그인
+        </button>
+        <button type="button" onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
+          닫기
+        </button>
       </form>
     </div>
-
-
-    
   </div>
-<!--신고모달-->
-<div id="reportmoal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+
+  <div id="reportmodal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
       <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택</h2>
-      <form method ="POST" action="/report" onsubmit="setTime()">
-              <div class="mb-4">      
-                  <label class="block mb-1 text-sm"></label>
-              </div>
-              
-              <select name="machine" class="w-full border rounded px-3 py-2 shadow cursor-pointer focus:ring-2 focus:ring-red-400">
+      <form id="reportForm">
+        <input type="hidden" name="report_time" id="hidden_time" value="">
+        
+        <div class="mb-4">      
+          <label class="block mb-1 text-sm"></label>
+        </div>
+        <select id="machineselect" name="machine" class="w-full border rounded px-3 py-2 shadow cursor-pointer focus:ring-2 focus:ring-red-400">
+          <option value="">기기 선택</option>
+          
+          {% for item in items %}
+            <option value="{{ item.item }}">
+              세탁기 {{ item.item }}
+            </option>
+          {% endfor %}
 
-                <option value="">기기 선택</option>
-
-                {% for machine in machines %}
-                  <option value="{{ machine }}">
-                    세탁기 {{ machine }}
-                  </option>
-                {% endfor %}
-
-              </select>
-              <div class="flex justify-end mt-5">
-              <button type="submit" class="flex bg-red-800 rounded-xl shadow-md p-4 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
-                    신고하기
-              </button>
-              </div>
-
-             <button type = "button" onclick="CloseReport()" class="w-full mt-3 text-gray-500">
-                   닫기
-             </button>
+        </select>
+        <div class="flex justify-end mt-5">
+          <button type="submit" class="flex bg-red-800 rounded-xl shadow-md p-4 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
+            신고하기
+          </button>
+        </div>
+        <button type="button" onclick="CloseReport()" class="w-full mt-3 text-gray-500">
+          닫기
+        </button>
       </form>
-<!--로그인스크립트모달-->
+    </div>
+  </div>
+
   <script>
+    // --- 로그인 모달 스크립트 ---
     function OpenLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
     }
     function CloseLogin() {
       document.getElementById("loginModal").classList.add("hidden");
     }
-  </script>
 
-<!--신고스크립트모달-->
-  <script>
+    // --- 로그인/로그아웃 AJAX ---
+    $('#loginForm').submit(function(e) {
+      e.preventDefault(); 
+      $.ajax({
+        type: "POST", url: "/login", contentType: "application/json",
+        data: JSON.stringify({ "id": $('#id').val(), "pwd": $('#pwd').val() }),
+        success: function(response) {
+          alert("로그인 성공!"); window.location.reload(); 
+        },
+        error: function(xhr) { alert("아이디 또는 비밀번호가 틀렸습니다."); }
+      });
+    });
+
+    function doLogout() {
+      $.ajax({
+        type: "POST", url: "/logout", 
+        success: function(response) {
+          if (response.result === "success") {
+            alert("로그아웃 되었습니다."); window.location.reload(); 
+          }
+        },
+        error: function(xhr) { alert("로그아웃 처리 중 문제가 발생했습니다."); }
+      });
+    }
+
+    // --- 신고 모달 스크립트 ---
     function OpenReport() {
-      document.getElementById("reportmoal").classList.remove("hidden");
+      document.getElementById("reportmodal").classList.remove("hidden");
     }
     function CloseReport() {
-      document.getElementById("reportmoal").classList.add("hidden");
+      document.getElementById("reportmodal").classList.add("hidden");
     }
-  </script>
 
-  <script>
-    function setTime() {
-      // 1. 현재 시간을 구합니다.
-      const now =new Date()
-      // 2. 한국 시간 기준으로 보기 좋게 문자열로 만듭니다. (예: 2026. 3. 5. 오후 3:18:00)
-      const timeString = now.toLocaleString('ko-KR');
+    // --- 신고 post ---
+    $('#reportForm').submit(function(e) {
+      e.preventDefault(); 
       
-      // 3. 숨겨둔 hidden 칸의 value에 이 시간을 쏙 넣어줍니다.
-      document.getElementById('hidden_time').value = timeString;
-    }
-  </script>
+      const selectedMachine = $('#machineselect').val();
+      const now = new Date().toLocaleString('ko-KR');
 
+      if (!selectedMachine) {
+        alert("기기를 선택해주세요.");
+        return;
+      }
+
+      $.ajax({
+        type: "POST", 
+        url: "/report", 
+        contentType: "application/json",
+        data: JSON.stringify({ 
+          "item": selectedMachine,
+          "date": now 
+        }),
+        success: function(response) {
+          alert("신고완료!"); 
+          window.location.reload(); 
+          CloseReport();
+        },
+        error: function(xhr) { 
+          alert("신고 접수 중 오류가 발생했습니다."); 
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>
