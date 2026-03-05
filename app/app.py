@@ -423,6 +423,20 @@ def create_report():
     return jsonify(result="success")
 
 
+# 신고 삭제
+@app.route("/report/<report_id>", methods=["DELETE"])
+@jwt_required()
+def delete_report(report_id):
+    uid = get_jwt_identity()
+    user = db.users.find_one({"id": uid})
+    role = user.get("role")
+    if role and role != "ADMIN":
+        abort(403, description="관리자 권한이 아닙니다.")
+
+    db.report.delete_one({"_id": ObjectId(report_id)})
+    return jsonify(result="success")
+
+
 # 기계 사용금지
 @app.route("/ban/machine", methods=["POST"])
 @jwt_required()
