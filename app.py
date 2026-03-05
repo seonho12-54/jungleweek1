@@ -30,7 +30,7 @@ app.config['BCRYPT_LEVEL'] = os.environ.get('BCRYPT_LEVEL')
 # flask-jwt-extended cookie 관련 세팅 
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
-app.config['JWT_COOKIE_CSRF_PROTECT'] = False 
+app.config['JWT_COOKIE_CSRF_PROTECT'] = True  
 app.config['JWT_ACCESS_CSRF_HEADER_NAME'] = "X-CSRF-TOKEN"
 app.config['JWT_REFRESH_CSRF_HEADER_NAME'] = "X-CSRF-TOKEN"
 
@@ -115,7 +115,7 @@ def login():
         if bcrypt.check_password_hash(user['pwd'], user_password):
             access_token = create_access_token(identity=user_id)
             refresh_token = create_refresh_token(identity=user_id)
-            refresh_token_hash(user_id, refresh_token, "new")
+            refresh_token_hash(user_id, refresh_token)
 
             # 쿠키 설정
             response = jsonify({'result': 'success', 'msg': '로그인 성공'})
@@ -167,7 +167,7 @@ def refresh():
         return jsonify({'msg': '접근 권한이 없습니다.'}), 401 
 
 # refresh 토큰 암호화 (SHA-256 + salt)
-def refresh_token_hash(user_id, refresh_token, type): 
+def refresh_token_hash(user_id, refresh_token): 
     salt = os.urandom(16).hex()
             
     sha256_hash = hashlib.sha256()
@@ -185,33 +185,21 @@ def refresh_token_hash(user_id, refresh_token, type):
         'expires_at': time_now + timedelta(days=7)
     }               
 
-    # 처음 로그인 할때 new 
-    # key rotation 할때 update 
-    if type == "new":
-        db.refresh_tokens.insert_one(refresh_token_hashed) 
-    elif type == "update":
-        db.refresh_tokens.update_one(
-            {
-                'user_id': user_id 
-            }, 
-            {
-                '$set': {
-                    'refresh_token': hash_result, 
-                    'salt': salt, 
-                    'issued_at': time_now,  
-                    'expires_at': time_now + timedelta(days=7)
-                }
-            }
-        )
+    # 처음 로그인 할때 + key rotation 할때 사용 
+    db.refresh_tokens.update_one(
+        {"user_id": user_id},
+        {"$set": refresh_token_hashed},
+        upsert=True
+    )
 
 # refresh token rotation으로 한번 사용한 token 폐기 
 def refresh_token_key_rotation(user_id): 
     refresh_token = create_refresh_token(identity=user_id)
-    refresh_token_hash(user_id, refresh_token, "update")
+    refresh_token_hash(user_id, refresh_token)
     return refresh_token 
  
 def db_setup_ttl_indexes(): 
-    db.refresh_tokens.create_index("issued_at", expireAfterSeconds=604800)
+    db.refresh_tokens.create_index("expires_at", expireAfterSeconds=0)
 
 if __name__ == '__main__':
     db_setup_ttl_indexes()
