@@ -22,6 +22,7 @@
     <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2 rounded">
       로그인
     </button>
+    
   </header>
 
   <!-- 타이틀 -->
@@ -38,6 +39,9 @@
  -->
 
 
+
+  <!-- 타이틀 -->
+  <h1 class="text-4xl font-bold text-center mb-10"세탁기</h1>
 
 <!--대기중인카드 진자2코드-->
 
@@ -74,11 +78,13 @@
       {% endfor %}
   </div>
 
-  <div class="flex justify-center mt-10 mb-20">
-    <button class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
+  
+    <div class="flex justify-center mt-10 mb-20">
+      <button onclick="OpenReport()" class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
       신고하기
     </button>
-  </div>
+    </div>
+
       </button>
 
 
@@ -199,9 +205,37 @@
 
     
   </div>
+<!--신고모달-->
+<div id="reportmoal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+    <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+      <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택</h2>
+      <form method ="POST" action="/report">
+              <div class="mb-4">      
+                  <label class="block mb-1 text-sm"></label>
+              </div>
+              
+              <select name="machine" class="w-full border rounded px-3 py-2 shadow cursor-pointer focus:ring-2 focus:ring-red-400">
 
+                <option value="">기기 선택</option>
 
+                {% for machine in machines %}
+                  <option value="{{ machine }}">
+                    세탁기 {{ machine }}
+                  </option>
+                {% endfor %}
 
+              </select>
+              <div class="flex justify-end mt-5">
+              <button type="submit" class="flex bg-red-800 rounded-xl shadow-md p-4 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
+                    신고하기
+              </button>
+              </div>
+
+             <button type = "button" onclick="CloseReport()" class="w-full mt-3 text-gray-500">
+                   닫기
+             </button>
+      </form>
+<!--로그인스크립트모달-->
   <script>
     function OpenLogin() {
       document.getElementById("loginModal").classList.remove("hidden");
@@ -210,6 +244,17 @@
       document.getElementById("loginModal").classList.add("hidden");
     }
   </script>
+
+<!--신고스크립트모달-->
+  <script>
+    function OpenReport() {
+      document.getElementById("reportmoal").classList.remove("hidden");
+    }
+    function CloseReport() {
+      document.getElementById("reportmoal").classList.add("hidden");
+    }
+  </script>
+
 
 </body>
 </html>
