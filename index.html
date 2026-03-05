@@ -47,6 +47,9 @@
 
   </div>
 
+
+
+
   <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
       <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
@@ -128,9 +131,9 @@
           alert("로그인 성공!");
           window.location.reload(); // 화면 새로고침해서 진자2 갱신
         },
-        error: function(xhr) {
-          alert("아이디 또는 비밀번호가 틀렸습니다.");
-        }
+        error:  
+          alert("아이디 또는 비밀번호가 틀렸습니다.")
+        
       });
     });
 
