@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>누가돌려? 관리자 페이지- 신고내역</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen text-gray-800">
+<header class="bg-white shadow p-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-blue-600">🛡️ 관리자 대시보드</h1>
+    <button onclick="location.href='index.html'" class="text-sm border border-gray-300 px-4 py-2 rounded hover:bg-gray-50">메인으로</button>
+  </header>
+<main class="max-w-5xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
+    <h2 class="text-xl font-bold mb-6">
+        🚨 신고 접수 내역
+    </h2>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-200 text-gray-700 text-sm uppercase">
+                    <th class="p-4 rounded-tl-lg">
+                        신고자 ID
+                    </th>
+                    <th class="p-4">신고 대상 (세탁기/건조기)</th>
+                    <th class="p-4 rounded-tr-lg">관리</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <td class="p-4 font-semibold text-gray-600">seonho</td>
+                <td class="p-4 text-blue-600 font-bold">세탁기 1번</td>
+                <td class="p-4">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                         <input type="checkbox" class="sr-only peer" onchange="toggleText(this)">
+        
+                        <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+        
+                     <span class="ml-3 text-sm font-bold text-gray-500 toggle-text">OFF</span>
+                     </label>
+                </td>
+
+            </tbody>
+            
+        </table>
+    </div>
+
+
+    
+</main>
+<script>
+  function toggleText(checkbox) {
+    // 체크박스 옆옆에 있는 span 태그(글자)를 찾습니다.
+    const textSpan = checkbox.nextElementSibling.nextElementSibling;
+    
+    // 체크가 되었으면 파란색 'ON', 풀렸으면 회색 'OFF'로 바꿉니다.
+    if (checkbox.checked) {
+      textSpan.innerText = 'ON';
+      textSpan.classList.remove('text-gray-500');
+      textSpan.classList.add('text-blue-600');
+    } else {
+      textSpan.innerText = 'OFF';
+      textSpan.classList.remove('text-blue-600');
+      textSpan.classList.add('text-gray-500');
+    }
+  }
+</script>
+
+
+
+
+</body>
