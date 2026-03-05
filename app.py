@@ -1,11 +1,15 @@
-from bson import ObjectId # pymongo가 설치될 때 함께 설치됨. (install X)
+from bson import ObjectId  # pymongo가 설치될 때 함께 설치됨. (install X)
 from pymongo import MongoClient
 
 from flask import Flask, render_template, jsonify, request, abort
 from dotenv import load_dotenv
 from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token, get_jwt_identity,
-    unset_jwt_cookies, create_refresh_token
+    JWTManager,
+    jwt_required,
+    create_access_token,
+    get_jwt_identity,
+    unset_jwt_cookies,
+    create_refresh_token,
 )
 from flask.json.provider import JSONProvider
 from flask_bcrypt import Bcrypt
@@ -18,14 +22,12 @@ from datetime import datetime
 load_dotenv()
 app = Flask(__name__)
 jwt = JWTManager(app)
-client = MongoClient('mongodb://test:test@localhost',27017)
+client = MongoClient("mongodb://test:test@localhost", 27017)
 db = client.dbjungle
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['BCRYPT_LEVEL'] = os.environ.get('BCRYPT_LEVEL')
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["BCRYPT_LEVEL"] = os.environ.get("BCRYPT_LEVEL")
 bcrypt = Bcrypt(app)
-
-
 
 
 #####################################################################################
@@ -56,149 +58,181 @@ app.json = CustomJSONProvider(app)
 # #####################################################################################
 
 
-@app.route('/')
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
+
 
 # 회원가입
-@app.route('/user', methods=['POST'])
+@app.route("/user", methods=["POST"])
 def create_user():
-   data = request.get_json()
-   pwd = data['pwd']
-   encryptPwd = bcrypt.generate_password_hash(pwd)
-   user = {
-       'id' : data['id'],
-       'pwd' : encryptPwd,
-       'gender' : data['gender'],
-       'name' : data['name'],
-       'role' : 'USER'
-   }
+    data = request.get_json()
+    pwd = data["pwd"]
+    encryptPwd = bcrypt.generate_password_hash(pwd)
+    user = {
+        "id": data["id"],
+        "pwd": encryptPwd,
+        "gender": data["gender"],
+        "name": data["name"],
+        "role": "USER",
+    }
 
-   db.users.insert_one(user)
-   return jsonify({'result': 'success'})
-    
+    db.users.insert_one(user)
+    return jsonify({"result": "success"})
+
 
 # 예약 신청
-@app.route('/reserve', methods=['POST'])
+@app.route("/reserve", methods=["POST"])
 @jwt_required()
 def create_reserve():
     uid = get_jwt_identity()
     data_list = request.get_json()
     validation_reserve(uid, data_list)
     for data in data_list:
-        data['id'] = uid
+        data["id"] = uid
     db.reserve.insert_many(data_list)
-    return jsonify({'result': 'success'})
-
-
+    return jsonify({"result": "success"})
 
 
 def validation_reserve(uid, data_list):
     errors = []
     for req in data_list:
         # Validation 1: 시간대 + item 겹침 체크
-        conflict = db.reserve.find_one({
-            "item": req["item"],
-            "start": {"$lt": req["end"]},
-            "end":   {"$gt": req["start"]},
-        })
+        conflict = db.reserve.find_one(
+            {
+                "item": req["item"],
+                "start": {"$lt": req["end"]},
+                "end": {"$gt": req["start"]},
+            }
+        )
 
         if conflict:
-            abort(409, description=f"{req['start']} ~ {req['end']} 시간대에 이미 예약이 존재합니다.")
+            abort(
+                409,
+                description=f"{req['start']} ~ {req['end']} 시간대에 이미 예약이 존재합니다.",
+            )
 
     # Validation 2: 날짜별 2시간 초과 체크
     request_minutes_by_date = {}
     for req in data_list:
         date_key = req["start"][:10]
         start_dt = datetime.strptime(req["start"], "%Y-%m-%d %H:%M:%S")
-        end_dt   = datetime.strptime(req["end"],   "%Y-%m-%d %H:%M:%S")
+        end_dt = datetime.strptime(req["end"], "%Y-%m-%d %H:%M:%S")
         duration = (end_dt - start_dt).seconds // 60
-        request_minutes_by_date[date_key] = request_minutes_by_date.get(date_key, 0) + duration
+        request_minutes_by_date[date_key] = (
+            request_minutes_by_date.get(date_key, 0) + duration
+        )
 
     for date_key, req_minutes in request_minutes_by_date.items():
-        existing = list(db.reserve.find({
-            "id": uid,
-            "start": {"$regex": f"^{date_key}"}
-        }))
+        existing = list(
+            db.reserve.find({"id": uid, "start": {"$regex": f"^{date_key}"}})
+        )
 
-    
         existing_minutes = sum(
-            (datetime.strptime(doc["end"], "%Y-%m-%d %H:%M:%S") -
-             datetime.strptime(doc["start"], "%Y-%m-%d %H:%M:%S")).seconds // 60
+            (
+                datetime.strptime(doc["end"], "%Y-%m-%d %H:%M:%S")
+                - datetime.strptime(doc["start"], "%Y-%m-%d %H:%M:%S")
+            ).seconds
+            // 60
             for doc in existing
         )
 
         total = existing_minutes + req_minutes
         if total > 120:
-            abort(400, description=f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다.")
+            abort(
+                400,
+                description=f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다.",
+            )
+
 
 # 예약 조회
-@app.route('/reserve', methods=['GET'])
+@app.route("/reserve", methods=["GET"])
 @jwt_required(optional=True)
 def find_reserve():
     uid = get_jwt_identity()
-    reserves = list(db.reserve.find({},{'_id':0}))
-    
+    reserves = list(db.reserve.find({}, {"_id": 0}))
+
     for reserve in reserves:
-        if uid and reserve['id'] == uid:
-            reserve['own'] = True
+        if uid and reserve["id"] == uid:
+            reserve["own"] = True
         else:
-            reserve['own'] = False
-    return jsonify(result = reserves)
+            reserve["own"] = False
+    return jsonify(result=reserves)
+
+
 # 세탁기/건조기 조회
-@app.route('/machine/<machine_type>', methods=['GET'])
+@app.route("/machine/<machine_type>", methods=["GET"])
 def find_machine(machine_type):
     prefix = "L" if machine_type == "laundry" else "D"
 
     # item이 prefix로 시작하는 machine 목록 조회
-    machines = list(db.machine.find(
-        {"item": {"$regex": f"^{prefix}"}},
-        {"_id": 0}  # _id 제외
-    ))
+    machines = list(
+        db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0})  # _id 제외
+    )
 
     return jsonify(machines)
 
+
 # 나의 예약 정보 조회
-@app.route('/own/<machine_type>', methods=['GET'])
+@app.route("/own/<machine_type>", methods=["GET"])
 @jwt_required()
 def find_own_reserve(machine_type):
     uid = get_jwt_identity()
     prefix = "L" if machine_type == "laundry" else "D"
 
     reserve = db.reserve.find_one(
-        {"id":uid,
-         "item": {"$regex": f"^{prefix}"}},
-         {"_id":0}
+        {"id": uid, "item": {"$regex": f"^{prefix}"}}, {"_id": 0}
     )
-    return jsonify(result = reserve)
+    return jsonify(result=reserve)
 
-# 신고 목록 조회 
-@app.route('/report', methods=['GET'])
+
+# 신고 목록 조회
+@app.route("/report", methods=["GET"])
 @jwt_required()
 def find_report():
     uid = get_jwt_identity()
-    user = db.users.find_one({"id":uid})
-    role = user.get('role')
-    if role and role != 'ADMIN' :
-        abort(403, description='관리자 권한이 아닙니다.')
-    
-    report = list(db.report.find({},{'_id':0}))
+    user = db.users.find_one({"id": uid})
+    role = user.get("role")
+    if role and role != "ADMIN":
+        abort(403, description="관리자 권한이 아닙니다.")
+
+    report = list(db.report.find({}, {"_id": 0}))
     return jsonify(result=report)
 
-# 고장 신고 
-@app.route('/report', methods=['POST'])
+
+# 고장 신고
+@app.route("/report", methods=["POST"])
 @jwt_required()
 def create_report():
     data = request.get_json()
     uid = get_jwt_identity()
 
     report = {
-        'item' : data.get('item'),
-        'date' : datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'uid' : uid
+        "item": data.get("item"),
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "uid": uid,
     }
     db.report.insert_one(report)
-    return jsonify(result='success')
+    return jsonify(result="success")
+
+
+# 기계 사용금지
+@app.route("/ban/machine", methods=["POST"])
+@jwt_required()
+def ban_machine():
+    uid = get_jwt_identity()
+    check_admin_role(uid)
+    item = request.get_json().get("item")
+
+    db.machine.update_one({"item": item}, {"$set": {"ban": True}})
+    return jsonify(result="success")
+
+
+def check_admin_role(uid):
+    user = db.users.find_one({"id": uid})
+    role = user.get("role")
+    if role and role != "ADMIN":
+        abort(403, description="관리자 권한이 아닙니다.")
 
 
 # 에러핸들러
@@ -207,7 +241,8 @@ def create_report():
 @app.errorhandler(401)
 @app.errorhandler(403)
 def handle_validation_error(e):
-    return jsonify({'result': 'fail', 'message': e.description}), e.code
+    return jsonify({"result": "fail", "message": e.description}), e.code
 
-if __name__ == '__main__':
-    app.run('0.0.0.0', port=5001, debug=True)
+
+if __name__ == "__main__":
+    app.run("0.0.0.0", port=5001, debug=True)
