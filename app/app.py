@@ -28,6 +28,14 @@ import sys
 from datetime import datetime
 
 import hashlib
+import threading
+
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+
+
+slack_client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
+SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
 
 load_dotenv()
 
@@ -47,7 +55,7 @@ app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
 app.config["JWT_COOKIE_CSRF_PROTECT"] = True
 app.config["JWT_ACCESS_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
 app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
-app.config["JWT_COOKIE_SECURE"] = True 
+app.config["JWT_COOKIE_SECURE"] = True
 
 bcrypt = Bcrypt(app)
 
@@ -91,9 +99,11 @@ def home():
     else:
         return render_template("index.html")
 
+
 @app.route("/register", methods=["GET"])
 def register():
     return render_template("signup.html")
+
 
 @app.route("/user", methods=["POST"])
 def create_user():
@@ -325,7 +335,7 @@ def validation_reserve(uid, data_list):
 def find_reserve():
     item = request.args.get("item")
     uid = get_jwt_identity()
-    reserves = list(db.reserve.find({"item": item}, {"_id": 0}))
+    reserves = list(db.reserve.find({"item": item}))
 
     for reserve in reserves:
         if uid and reserve["id"] == uid:
@@ -341,17 +351,14 @@ def find_machine(machine_type):
     prefix = "L" if machine_type == "laundry" else "D"
 
     # item이 prefix로 시작하는 machine 목록 조회
-    machines = list(
-        db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0})  # _id 제외
-    )
+    machines = list(db.machine.find({"item": {"$regex": f"^{prefix}"}}))
 
     if prefix == "L":
         return render_template("laundry-select.html", machines=machines)
-    elif prefix == "D": 
+    elif prefix == "D":
         return render_template("dryer-select.html", machines=machines)
     else:
         abort(400, "유효한 기계 타입이 아닙니다.")
-
 
 
 # 나의 예약 정보 조회
@@ -363,9 +370,18 @@ def find_own_reserve(machine_type):
     user = db.users.find_one({"id": uid})
     name = user.get("name")
 
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     reserve = db.reserve.find_one(
-        {"id": uid, "item": {"$regex": f"^{prefix}"}}, {"_id": 0, "id": 0}
+        {
+            "id": uid,
+            "item": {"$regex": f"^{prefix}"},
+            "end": {"$gte": now},  # 현재시간보다 종료시간이 크거나 같은 것
+        },
+        {"id": 0},
+        sort=[("start", 1)],  # 그 중 가장 가까운 것
     )
+
     reserve["name"] = name
     return jsonify(result=reserve)
 
@@ -380,7 +396,7 @@ def find_report():
     if role and role != "ADMIN":
         abort(403, description="관리자 권한이 아닙니다.")
 
-    report = list(db.report.find({}, {"_id": 0}))
+    report = list(db.report.find())
     return jsonify(result=report)
 
 
@@ -417,6 +433,59 @@ def check_admin_role(uid):
     role = user.get("role")
     if role and role != "ADMIN":
         abort(403, description="관리자 권한이 아닙니다.")
+
+
+# 반납하기
+@app.route("/reserve/<pk>", methods=["DELETE"])
+@jwt_required()
+def return_machine(pk):
+    uid = get_jwt_identity()
+
+    reserve = db.reserve.find_one({"_id": ObjectId(pk)})
+    id = reserve.get("id")
+
+    if uid != id:
+        abort(403, description="본인의 예약만 반납할 수 있습니다.")
+
+    item = reserve.get("item")
+    db.reserve.delete_one({"_id": ObjectId(pk)})
+
+    if item.startswith("L"):
+        machine_name = "세탁기" + reserve["item"][1:]
+    elif item.startswith("D"):
+        machine_name = "건조기" + reserve["item"][1:]
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    next_reserve = db.reserve.find_one(
+        {"item": item, "start": {"$gte": now}}, sort=[("start", 1)]
+    )
+
+    if next_reserve:
+        next_name = next_reserve.get("name", next_reserve["id"])
+        start_time = next_reserve["start"]
+        message = (
+            f" {machine_name} 사용이 끝났습니다!\n"
+            f"다음 예약자 {next_name}님 ({start_time}) 이용 가능합니다."
+        )
+    else:
+        message = f"{machine_name} 사용이 끝났습니다!"
+
+    send_slack_async(message)
+
+    return jsonify(result="success")
+
+
+def send_slack_message(message):
+    try:
+        slack_client.chat_postMessage(channel=SLACK_CHANNEL_ID, text=message)
+    except SlackApiError as e:
+        print(f"Slack 에러: {e.response['error']}")
+
+
+def send_slack_async(message):
+    thread = threading.Thread(target=send_slack_message, args=(message,))
+    thread.daemon = True  # 메인 프로세스 종료시 같이 종료
+    thread.start()
 
 
 # 에러핸들러
