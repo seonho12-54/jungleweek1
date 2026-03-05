@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- 여긴 임포트입니다-->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>누가돌려?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- 상단 네비 -->
+  <header class="flex justify-between items-center p-6">
+    <button onclick="location.href='index.html'" class="flex items-center gap-2 text-xl font-bold">
+       <span>🫧누가돌려?</span>
+    </button>
+  </header>
+<body class="h-screen bg-gray-100 flex flex-col items-center justify-center">
+
+
+  <div class="w-2/3 h-2/5 bg-gray-300 rounded-xl shadow-lg  gap-10 p-10">
+    <form>
+    <div class="mb-4">
+        <label class="block mb-1 text-sm">ID</label>
+        <input type="email" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
+      </div>
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">Password</label>
+        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
+      </div>
+       <div class="mb-6">
+        <label class="block mb-1 text-sm">Password Comfirm</label>
+        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 한번 더 입력하세요" required>
+      </div>
+
+      <div class="mb-8">
+        <label class="block mb-2 text-sm">성별</label>
+        <div class="flex items-center gap-6">
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="radio" name="gender" value="male" class="w-4 h-4 text-blue-600 focus:ring-blue-500" required>
+            남성
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="radio" name="gender" value="female" class="w-4 h-4 text-blue-600 focus:ring-blue-500" required>
+            여성
+          </label>
+        </div>
+      </div>
+
+        <button class="w-full bg-blue-600 text-white font-bold py-1.5 rounded-xl shadow-md hover:bg-blue-700 transition duration-300">
+            <p>회원가입</p>
+        </button>
+    </form>
+
+  </div>
+
+</body>

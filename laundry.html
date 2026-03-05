@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>누가돌려?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+
+
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- 상단 네비 -->
+  <header class="flex justify-between items-center p-6">
+    <button onclick="location.href='index.html'" class="flex items-center gap-2 text-xl font-bold">
+       <span>🫧누가돌려?</span>
+
+       
+    </button>
+
+    <button onclick="openModal()" class="border border-blue-500 text-blue-600 px-6 py-2 rounded">
+      로그인
+    </button>
+  </header>
+
+  <!-- 타이틀 -->
+  <h1 class="text-4xl font-bold text-center mb-10">세탁기</h1>
+
+  <!-- 카드 영역 -->
+  <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
+
+    <!-- 대기중 카드 -->
+    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 남성용 세탁기 1
+    </button>
+    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">  🫧 남성용 세탁기 2
+    </button>
+    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">  🫧 남성용 세탁기 3
+    </button>    
+    
+    <!-- 사용중 카드 -->
+    <button class="bg-red-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-300 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">  🫧 남성용 세탁기 4
+     <div class="text-sm mt-3">⏱ 사용경과 : 00:58:34</div>
+    </button>  
+
+    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">  🫧 남성용 세탁기 5
+    </button>  
+
+    <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">  🫧 공용 세탁기 6
+    </button>  
+
+   <button class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">   🫧 공용 세탁기 7
+    </button>  
+  </div>
+  <div class="flex justify-center mt-10 mb-20">
+  <button class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-700 active:translate-y-1 active:shadow-sm
+               transform transition duration-100">     신고하기
+      </button>
+  </div>
+
+<!--
+  
+
+<div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
+
+{% for item in items %}
+
+  <button 
+    class="
+      {% if item.using == 'true' %}
+        bg-red-400 hover:bg-red-300
+      {% else %}
+        bg-green-400 hover:bg-green-500
+      {% endif %}
+      rounded-xl shadow-md p-12 text-center text-lg font-semibold
+      active:translate-y-1 active:shadow-sm
+      transform transition duration-100
+
+    "
+  >
+
+    🫧 {{ item.items }}
+
+    {% if item.using == 'true' %}
+      <div class="text-sm mt-3">
+        ⏱ 사용경과 : {{ item.elapsed }}
+      </div>
+    {% endif %}
+
+  </button>
+
+{% endfor %}
+
+</div>
+
+
+
+-->
+
+
+  
+  <!-- 로그인 모달 -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+    
+    <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+      <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
+
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">Email</label>
+        <input type="email" class="w-full border rounded px-3 py-2">
+      </div>
+
+      <div class="mb-6">
+        <label class="block mb-1 text-sm">Password</label>
+        <input type="password" class="w-full border rounded px-3 py-2">
+      </div>
+
+      <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        로그인
+      </button>
+
+      <button onclick="closeModal()" class="w-full mt-3 text-gray-500">
+        닫기
+      </button>
+    </div>
+
+  </div>
+
+
+<script>
+  function openModal() {
+    document.getElementById("loginModal").classList.remove("hidden");
+  }
+
+  function closeModal() {
+    document.getElementById("loginModal").classList.add("hidden");
+  }
+</script>
+
+</body>
+</html>
