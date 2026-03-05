@@ -25,15 +25,37 @@
       로그인
     </button>
     -->
-    {% if session.user %}
-      <a href="/logout" class="bg-red-500 text white px-4 py-2 rounded">
-        로그아웃
-      </a>
+    {% if user_info %}
+    <button onclick="doLogout()" class="bg-red-500 text-white px-4 py-2 rounded">
+      로그아웃
+    </button>
     {% else %}
       <button onclick="OpenLogin()" class="bg-blue-500 text-white px-4 py-2 rounded">
         로그인
       </button>
     {% endif %}
+
+
+    <!--로그아웃 ajax-->
+<script>
+  function doLogout() {
+    $.ajax({
+      type: "POST",         // 백엔드가 원하는 POST 방식!
+      url: "/logout",       // 로그아웃 주소
+      success: function(response) {
+        if (response.result === "success") {
+          alert("로그아웃 되었습니다.");
+          // 로그아웃 성공 시 화면을 새로고침해서 진자2가 '로그인' 버튼을 그리도록 함
+          window.location.reload(); 
+        }
+      },
+      error: function(xhr) {
+        alert("로그아웃 처리 중 문제가 발생했습니다.");
+      }
+    });
+  }
+</script>
+
 
   </header>
   <h1 class="text-5xl font-bold text-blue-600">
@@ -66,35 +88,56 @@
 
 
    <!-- 로그인 모달 -->
- <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+<div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+  <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+    <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
     
-    <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
-      <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
-      <form method ="POST" action="/login">
-        
-    <!-- 아이디 -->
+    <form id="loginForm">
+      
       <div class="mb-4">
         <label class="block mb-1 text-sm">ID</label>
-        
-        <input type="text" name="id" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
+        <input type="text" id="id" class="w-full border rounded px-3 py-2" required>
       </div>
       
-   <!-- 비밀번호 -->
       <div class="mb-6">
         <label class="block mb-1 text-sm">Password</label>
-        <input type="password" name="pwd" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
+        <input type="password" id="pwd" class="w-full border rounded px-3 py-2" required>
       </div>
       
-      
-      <button type ="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
         로그인
       </button>
 
-      <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
+      <button type="button" onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
         닫기
       </button>
 
-      </form>
+    </form>
+
+
+      <script>
+    $('#loginForm').submit(function(e) {
+        e.preventDefault(); // 새로고침 방지
+
+        // 정확히 id와 pwd라는 키워드로 전송!
+        $.ajax({
+          type: "POST",
+          url: "/login",
+          contentType: "application/json",
+          data: JSON.stringify({
+            "id": $('#id').val(),   // 백엔드의 data["id"] 에 꽂힘
+            "pwd": $('#pwd').val()  // 백엔드의 data["pwd"] 에 꽂힘
+          }),
+          success: function(response) {
+            alert("로그인 성공!");
+            window.location.reload(); // 화면 새로고침해서 진자2 갱신
+          },
+          error: function(xhr) {
+            alert("아이디 또는 비밀번호가 틀렸습니다.");
+          }
+        });
+      });
+        </script>
     </div>
 
 
@@ -140,60 +183,100 @@
 
 <!--진자2 예약확인시스템-->
 
+
+
 {% if is_logged_in %}
 
-<div class="w-full max-w-4xl h-24 bg-gray-300 rounded-xl shadow-lg flex items-center p-4 gap-4 mt-6">
-  <button id="washer-btn" class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
-    <img src="./세탁기.png" class="h-8 w-8" alt="세탁기">
-  </button>
+  <div class="w-full max-w-4xl h-24 bg-gray-300 rounded-xl shadow-lg flex items-center p-4 gap-4 mt-6">
+    
+    <button onclick="showMyWasher()" class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
+      <img src="./세탁기.png" class="h-8 w-8" alt="세탁기">
+    </button>
 
-  <button id="dryer-btn" class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
-    <img src="./건조기.png" class="h-8 w-8" alt="건조기">
-  </button>
+    <button onclick="showMyDryer()" class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
+      <img src="./건조기.png" class="h-8 w-8" alt="건조기">
+    </button>
 
-  <div class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3">
-    <img src="./사용자.png" class="h-6 w-6 opacity-60">
-    <span id="display-id" class="text-gray-600 font-medium">아이콘 클릭</span>
+    <div class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3">
+      <img src="./사용자.png" class="h-6 w-6 opacity-60">
+      <span id="display-id" class="text-gray-600 font-medium">아이콘 클릭</span>
+    </div>
+
+    <div class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3">
+      <img src="./예약시간.png" class="h-6 w-6 opacity-60">
+      <span id="display-time" class="text-gray-600 font-medium">--:--</span>
+    </div>
+    
   </div>
-
-  <div class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3">
-    <img src="./예약시간.png" class="h-6 w-6 opacity-60">
-    <span id="display-time" class="text-gray-600 font-medium">--:--</span>
-  </div>
-</div>
-
-<script>
-  // 서버에서 해당 기계 타입 예약 정보 가져와서 표시
-  function fetchReserve(machineType) {
-    fetch(`/own/${machineType}`)
-      .then(res => res.json())
-      .then(data => {
-        const r = data.result;
-        if (r) {
-          document.getElementById('display-id').innerText = r.id;
-          document.getElementById('display-time').innerText = `${r.start} ~ ${r.end}`;
-        } else {
-          document.getElementById('display-id').innerText = "없음";
-          document.getElementById('display-time').innerText = "--:--";
-        }
-      })
-      .catch(err => console.error(err));
-  }
-
-  document.getElementById("washer-btn").addEventListener("click", () => fetchReserve("laundry"));
-  document.getElementById("dryer-btn").addEventListener("click", () => fetchReserve("dryer"));
-</script>
 
 {% endif %}
+<script>
+// 1. 데이터를 저장해둘 빈 상자(변수)를 만듭니다.
+  let myWasherData = null;
+  let myDryerData = null;
+
+  // 2. 페이지가 켜지자마자 AJAX로 내 예약 정보를 가져옵니다.
+  $(document).ready(function() {
+
+         $.ajax({
+          type: "GET",
+          url: "/reserve",
+          success: function(response) {
+              let reserves = response.result;
+
+              reserves.forEach(function(reserve) {
+                  if (reserve.own === true) {
+
+                     
+                      if (reserve.item.startsWith('L')) {
+                          myWasherData = reserve;
+                      } else if (reserve.item.startsWith('D')) {
+                          myDryerData = reserve;
+                      }
+                  }
+              });
+              console.log("데이터 세팅 완료!");
+          },
+          error: function(xhr) {
+              console.error("예약 정보를 불러오는데 실패했습니다.");
+          }
+      });
+  });
+    // 3. 세탁기 버튼을 눌렀을 때 실행될 함수
+      function showMyWasher() {
+          if (myWasherData) {
+              // 예약이 있으면 가져온 JSON 데이터로 텍스트를 만듭니다.
+              let timeText = myWasherData.end + " ~ " + (myWasherData.period || "");
+              updateInfo(myWasherData.id, timeText);
+          } else {
+              // 예약이 없으면 없다고 표시합니다.
+              updateInfo("예약 없음", "--:--");
+          }
+      }
+
+      // 4. 건조기 버튼을 눌렀을 때 실행될 함수
+      function showMyDryer() {
+          if (myDryerData) {
+              let timeText = myDryerData.end + " ~ " + (myDryerData.period || "");
+              updateInfo(myDryerData.id, timeText);
+          } else {
+              updateInfo("예약 없음", "--:--");
+          }
+      }
+
+      // 5. 화면의 글씨를 바꿔주는 핵심 함수 (기존 코드와 동일)
+      function updateInfo(id, time) {
+          document.getElementById('display-id').innerText = id;
+          document.getElementById('display-time').innerText = time;
+
+      
+</script>
+
+
+
 
 
 
 
 </body>
-
-
-
-
-
-
 </html>
