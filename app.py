@@ -1,8 +1,8 @@
 from bson import ObjectId # pymongo가 설치될 때 함께 설치됨. (install X)
 from pymongo import MongoClient
 
-from flask import Flask, render_template, jsonify, request
-from flask_jwt_extended import (JWTManager, jwt_required, create_access_token, get_jwt_identity, create_refresh_token, set_access_cookies, set_refresh_cookies)
+from flask import Flask, render_template, jsonify, request, abort
+from flask_jwt_extended import (JWTManager, jwt_required, create_access_token, get_jwt_identity, create_refresh_token, set_access_cookies, set_refresh_cookies, unset_jwt_cookies)
 
 from flask.json.provider import JSONProvider
 
@@ -98,34 +98,50 @@ def login():
     try:
         user_data = request.get_json()
     except Exception: 
-        return jsonify({'msg': 'JSON 형식이 잘못되었습니다'}), 400
+        abort(400, description="JSON 형식이 잘못되었습니다.")
     
     user_id = user_data.get('id')
     user_password = user_data.get("pwd")
 
     # server side validation 
     if not user_id: 
-        return jsonify({'msg': 'id가 비어 있습니다'}), 400
+        abort(400, description="id가 비어 있습니다.")
     if not user_password:
-        return jsonify({'msg': "비밀번호가 비어 있습니다"}), 400 
+        abort(400, description="비밀번호가 비어 있습니다.")
         
     user = db.users.find_one({'id': user_id})
 
     if user:        
-        if bcrypt.check_password_hash(user['pwd'], user_password):
+        if bcrypt.check_password_hash(user.get('pwd'), user_password):
             access_token = create_access_token(identity=user_id)
             refresh_token = create_refresh_token(identity=user_id)
-            refresh_token_hash(user_id, refresh_token)
+            refresh_token_hash(user_id, refresh_token, "new")
 
             # 쿠키 설정
-            response = jsonify({'result': 'success', 'msg': '로그인 성공'})
+            response = jsonify({'result': 'success', 'role': user.get('role')})
             set_access_cookies(response, access_token) 
             set_refresh_cookies(response, refresh_token)
             
             return response 
         else:
-            return jsonify({'msg': '비밀번호가 틀렸습니다'}), 401 
+            abort(401, description="비밀번호가 틀렸습니다.")
 
+@app.route('/logout', methods=['POST'])
+@jwt_required(optional=True)
+def logout():
+    current_user = get_jwt_identity()
+    response = jsonify({'result': 'success'})
+
+    # refresh token을 db에서 삭제 
+    if current_user:
+        db.refresh_tokens.delete_one({'user_id': current_user})
+
+    # access token과 refresh token을 브라우저에서 삭제 
+    unset_jwt_cookies(response)
+
+    return response 
+
+    
 
 # client가 이미 refresh token을 가지고 있을때 받는 request 
 @app.route('/refresh', methods=['POST'])
@@ -141,9 +157,9 @@ def refresh():
     stored_token_data = db.refresh_tokens.find_one({'user_id': current_user})  
 
     if not stored_token_data: 
-        return jsonify({'msg: 다시 로그인 하세요'}), 401 
+        abort(401, description="다시 로그인 하세요.")
         
-    salt = stored_token_data['salt']
+    salt = stored_token_data.get('salt')
 
     # 클라이언트가 보낸 Raw 토큰과 합쳐서 해시 생성             
     sha256_hash = hashlib.sha256()
@@ -163,11 +179,12 @@ def refresh():
         set_refresh_cookies(response, new_refresh_token)
 
         return response 
-    else:         
-        return jsonify({'msg': '접근 권한이 없습니다.'}), 401 
+    else:    
+        abort(401, description="접근 권한이 없습니다.")     
+
 
 # refresh 토큰 암호화 (SHA-256 + salt)
-def refresh_token_hash(user_id, refresh_token): 
+def refresh_token_hash(user_id, refresh_token, type): 
     salt = os.urandom(16).hex()
             
     sha256_hash = hashlib.sha256()
@@ -185,21 +202,22 @@ def refresh_token_hash(user_id, refresh_token):
         'expires_at': time_now + timedelta(days=7)
     }               
 
-    # 처음 로그인 할때 + key rotation 할때 사용 
+    # 처음 로그인 할때 + key rotation 할때
     db.refresh_tokens.update_one(
-        {"user_id": user_id},
-        {"$set": refresh_token_hashed},
-        upsert=True
+        {'user_id': user_id}, 
+        {'$set': refresh_token_hashed},
+        upsert=True 
     )
 
 # refresh token rotation으로 한번 사용한 token 폐기 
 def refresh_token_key_rotation(user_id): 
     refresh_token = create_refresh_token(identity=user_id)
-    refresh_token_hash(user_id, refresh_token)
+    refresh_token_hash(user_id, refresh_token, "update")
     return refresh_token 
  
 def db_setup_ttl_indexes(): 
     db.refresh_tokens.create_index("expires_at", expireAfterSeconds=0)
+
 
 if __name__ == '__main__':
     db_setup_ttl_indexes()
