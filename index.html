@@ -20,9 +20,21 @@
     <button  onclick="location.href='signup.html'" class=" border border-blue-500 text-blue-600 px-6 py-2">
         회원가입
     </button>
+    <!--
     <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2">
       로그인
     </button>
+    -->
+    {% if session.user %}
+      <a href="/logout" class="bg-red-500 text white px-4 py-2 rounded">
+        로그아웃
+      </a>
+    {% else %}
+      <button onclick="OpenLogin()" class="bg-blue-500 text-white px-4 py-2 rounded">
+        로그인
+      </button>
+    {% endif %}
+
   </header>
   <h1 class="text-5xl font-bold text-blue-600">
     누가돌려? made by tailwind    
@@ -58,23 +70,34 @@
     
     <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
       <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
-      <form>
+      <form method ="POST" action="/login">
+        
+    <!-- 아이디 -->
       <div class="mb-4">
         <label class="block mb-1 text-sm">ID</label>
-        <input type="email" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
+        
+        <input type="text" name="id" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
       </div>
+      
+   <!-- 비밀번호 -->
       <div class="mb-6">
         <label class="block mb-1 text-sm">Password</label>
-        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
+        <input type="password" name="pwd" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
       </div>
+      
+      
       <button type ="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
         로그인
       </button>
+
       <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
         닫기
       </button>
+
       </form>
     </div>
+
+
     
   </div>
 
@@ -90,7 +113,9 @@
   </script>
 
 
+
 <!--나의 예약정보를 가져오고 세탁기누르면 세탁 정보 건조기 누르면 건조기정보 아이디와 예약시간을 넣는다-->
+<!--
 <div class="w-2/3 h-1/10 bg-gray-300 rounded-xl shadow-lg mt-6 flex gap-10 p-10 y-6">
   
   <button onclick="location.href='내 세탁기 정보'" class="w-1/10 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition duration-300">
@@ -109,8 +134,45 @@
     </button>
 
 </div>
+-->
 
 
+
+<!--진자2 예약시스템-->
+
+
+
+{% if is_logged_in %}
+
+    <div class="w-full max-w-4xl h-24 bg-gray-300 rounded-xl shadow-lg flex items-center p-4 gap-4 mt-6">
+        <button onclick="updateInfo('{{washer_res.id}}, {{washer_res.start}}')"class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
+          <img src="./세탁기.png" class="h-8 w-8" alt="세탁기">
+        </button>
+
+       <button onclick="updateInfo('{{ dryer_res.id }}', '{{ dryer_res.start }} {{ dryer_res.period }}')" 
+            class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition">
+        <img src="./건조기.png" class="h-8 w-8" alt="건조기">
+         </button>
+
+         <div class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3">
+        <img src="./사용자.png" class="h-6 w-6 opacity-60">
+        <span id="display-id" class="text-gray-600 font-medium">아이콘 클릭</span>
+        </div>
+
+        <div class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3">
+        <img src="./예약시간.png" class="h-6 w-6 opacity-60">
+        <span id="display-time" class="text-gray-600 font-medium">--:--</span>
+        </div>
+
+    </div>
+
+    <script>
+      function updateInfo(id,Time){
+        document.getElementByUd('display-id').innerText =id;
+        document.getElementByUd('display-time').innerText =time;
+        
+      }
+    </script>
 
 </body>
 
