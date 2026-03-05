@@ -9,22 +9,26 @@
 
   <body class="bg-gray-100 min-h-screen">
     <header class="flex justify-between items-center p-6">
-      <button
-        onclick="location.href = 'index.html'"
-        class="flex items-center gap-2 text-xl font-bold"
+      <a
+        href="{{ url_for('home') }}"
+        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
       >
-        <span>누가돌려?</span>
-      </button>
-
+        <img
+          src="{{ url_for('static', filename='images/로고.png') }}"
+          class="h-16 w-auto"
+        />
+      </a>
       <button
         onclick="OpenLogin()"
-        class="border border-blue-500 text-blue-600 px-6 py-2 rounded"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
         로그인
       </button>
     </header>
 
-    <h1 id="pageTitle" class="text-4xl font-bold text-center mb-10">세탁기</h1>
+    <h1 id="pageTitle" class="mt-10 text-4xl font-bold text-center mb-10">
+      세탁기
+    </h1>
 
     <div class="max-w-6xl mx-auto px-6">
       <div class="grid grid-cols-12 gap-10">
@@ -98,7 +102,8 @@
       </div>
     </div>
 
-    <div
+    {% include 'modal.html' %}
+    <!-- <div
       id="loginModal"
       class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
     >
@@ -129,7 +134,7 @@
           닫기
         </button>
       </div>
-    </div>
+    </div> -->
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 

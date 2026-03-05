@@ -35,46 +35,53 @@
     <!-- 카드 영역 -->
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
       <!-- 대기중 카드 -->
-      <button
+      <a
+        href="{{ url_for('find_reserve') }}"
         class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
         🫧 남성용 세탁기 1
-      </button>
-      <button
+      </a>
+      <a
+        href="{{ url_for('find_reserve') }}"
         class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
         🫧 남성용 세탁기 2
-      </button>
-      <button
+      </a>
+      <a
+        href="{{ url_for('find_reserve') }}"
         class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
         🫧 남성용 세탁기 3
-      </button>
+      </a>
 
       <!-- 사용중 카드 -->
-      <button
-        class="bg-red-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
+      <a
+        href="{{ url_for('find_reserve') }}"
+        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
         🫧 남성용 세탁기 4
-      </button>
+      </a>
 
-      <button
+      <a
+        href="{{ url_for('find_reserve') }}"
         class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
         🫧 남성용 세탁기 5
-      </button>
+      </a>
 
-      <button
+      <a
+        href="{{ url_for('find_reserve') }}"
         class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
-        🫧 공용 세탁기 6
-      </button>
+        🫧 공용 세탁기 1
+      </a>
 
-      <button
+      <a
+        href="{{ url_for('find_reserve') }}"
         class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
-        🫧 공용 세탁기 7
-      </button>
+        🫧 공용 세탁기 2
+      </a>
     </div>
 
     <!--
@@ -117,41 +124,13 @@
 -->
 
     <!-- 로그인 모달 -->
-    <div
-      id="loginModal"
-      class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
-    >
-      <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
-        <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
-
-        <div class="mb-4">
-          <label class="block mb-1 text-sm">Email</label>
-          <input type="email" class="w-full border rounded px-3 py-2" />
-        </div>
-
-        <div class="mb-6">
-          <label class="block mb-1 text-sm">Password</label>
-          <input type="password" class="w-full border rounded px-3 py-2" />
-        </div>
-
-        <button
-          class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-        >
-          로그인
-        </button>
-
-        <button onclick="closeModal()" class="w-full mt-3 text-gray-500">
-          닫기
-        </button>
-      </div>
-    </div>
+    {% include 'modal.html' %}
 
     <script>
-      function openModal() {
+      function OpenLogin() {
         document.getElementById("loginModal").classList.remove("hidden")
       }
-
-      function closeModal() {
+      function CloseLogin() {
         document.getElementById("loginModal").classList.add("hidden")
       }
     </script>

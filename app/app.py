@@ -331,7 +331,7 @@ def find_reserve():
             reserve["own"] = True
         else:
             reserve["own"] = False
-    return jsonify(result=reserves)
+    return render_template('time.html', reserves=reserves)
 
 
 # 세탁기/건조기 조회
