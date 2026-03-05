@@ -19,25 +19,34 @@
 
 
 
-
+<!--여긴 배열한겁니다-->
   <div class="w-2/3 h-3/6 bg-gray-300 rounded-xl shadow-lg  gap-10 p-10">
-    <form method="POST" action="/user">
+    <form id= "imfoma" method="POST" action="/user">
     <div class="mb-4">
         <label class="block mb-1 text-sm">ID</label>
-        <input type="text" name="id" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
+        <input type="text" name="id" id = "signupId" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
+      </div>
+      <div>
+        
+      <button id = sameId type= "submit" class="w-1/5 bg-blue-600 text-white font-bold py-1 rounded-xl shadow-md hover:bg-blue-700 transition duration-300">
+            <p>중복체크</p>
+      </button>
+
       </div>
       <div class="mb-4">
         <label class="block mb-1 text-sm">Password</label>
-        <input type="text" name="pwd" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
+        <input type="text" id = "signupPw" name="pwd" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
       </div>
        <div class="mb-6">
         <label class="block mb-1 text-sm">Password Comfirm</label>
-        <input type="text" name="pwd_confirm" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 한번 더 입력하세요" required>
+        <input type="text" name="pwd_confirm" id= "signupPwc" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 한번 더 입력하세요" required>
       </div>
       <div class="mb-4">
         <label class="block mb-1 text-sm">이름</label>
-        <input type="text" name="name" class="w-full border rounded px-3 py-2" placeholder="이름을 입력하세요" required>
+        <input type="text" name="name" id= "signupName" class="w-full border rounded px-3 py-2" placeholder="이름을 입력하세요" required>
       </div>
+
+
 
 
       <div class="mb-8">
@@ -60,5 +69,75 @@
     </form>
 
   </div>
+
+
+<script>
+
+  // id 중복확인
+     $('#sameId').submit(function(e) {
+      e.preventDefault(); 
+      const userId = $('#signupId').val();
+
+      $.ajax({
+        type: "POST", 
+        url: "/user/check-id", 
+        contentType: "application/json",
+        data: JSON.stringify({ 
+          "id" : userId
+        }),
+        success: function(response) {
+          alert(response.message); 
+        },
+        error: function(xhr) { 
+          alert(errorMsg);
+        }
+      });
+    });
+
+
+
+
+    //회원정보 ajax
+     $('#imfoma').submit(function(e) {
+      e.preventDefault(); 
+      
+      
+      const userId = $('#signupId').val();
+      const userPw = $('#signupPw').val();
+      const userPwc = $('#signupPwc').val();
+      const userName = $('#signupName').val();
+      const userGender = $('input[name="gender"]:checked').val();
+
+      if (userPw !== userPwc) {
+        alert("비밀번호가 서로 일치하지 않습니다!");
+        return;
+      }
+
+      $.ajax({
+        type: "POST", 
+        url: "/user", 
+        contentType: "application/json",
+        data: JSON.stringify({ 
+          	"id" : userId,
+            "pwd" : userPw,
+            "gender" : userGender
+            "name" : userName
+        }),
+        success: function(response) {
+          alert("회원가입이 완료되었습니다!");
+          window.location.href = "/"; // 메인으로 이동
+        },
+        error: function(xhr) { 
+          alert(errorMsg);
+        }
+      });
+    });
+
+
+
+
+
+</script>
+
 
 </body>
