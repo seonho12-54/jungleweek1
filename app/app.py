@@ -47,7 +47,7 @@ app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
 app.config["JWT_COOKIE_CSRF_PROTECT"] = True
 app.config["JWT_ACCESS_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
 app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
-app.config["JWT_COOKIE_SECURE"] = True 
+app.config["JWT_COOKIE_SECURE"] = True
 
 bcrypt = Bcrypt(app)
 
@@ -91,9 +91,11 @@ def home():
     else:
         return render_template("index.html")
 
+
 @app.route("/register", methods=["GET"])
 def register():
     return render_template("signup.html")
+
 
 @app.route("/user", methods=["POST"])
 def create_user():
@@ -130,7 +132,7 @@ def check_id():
 
 
 @app.route("/login", methods=["POST"])
-def login():    
+def login():
     try:
         user_data = request.get_json()
     except Exception:
@@ -149,7 +151,7 @@ def login():
 
     if user:
         if bcrypt.check_password_hash(user.get("pwd"), user_password):
- 
+
             access_token = create_access_token(identity=user_id)
             refresh_token = create_refresh_token(identity=user_id)
             refresh_token_hash(user_id, refresh_token, "new")
@@ -273,7 +275,7 @@ def create_reserve():
 
 def validation_reserve(uid, data_list):
     errors = []
- 
+
     for req in data_list:
         # Validation 1: 시간대 + item 겹침 체크
         conflict = db.reserve.find_one(
@@ -325,6 +327,7 @@ def validation_reserve(uid, data_list):
 
 # 예약 조회
 
+
 @app.route("/reserve", methods=["GET"])
 @jwt_required(optional=True)
 def find_reserve():
@@ -340,7 +343,9 @@ def find_reserve():
         else:
             reserve["own"] = False
     print(item)
-    return render_template('time.html', reserves=reserves, current_user=uid, machine_type=item)
+    return render_template(
+        "time.html", reserves=reserves, current_user=uid, machine_type=item
+    )
 
 
 @app.route("/machine/<machine_type>", methods=["GET"])
@@ -352,26 +357,34 @@ def find_machine(machine_type):
     current_user_id = get_jwt_identity()
     user_info = None
     if current_user_id:
-        user_info = db.users.find_one({'id': current_user_id})
-    
-    # 유저 성별 확인 (로그인 안 되어 있을 경우 기본값 처리 필요)
-    user_gender = user_info.get("gender") 
+        user_info = db.users.find_one({"id": current_user_id})
 
-    # 1. 쿼리 조건 설정: 
-    # - 아이템 이름이 L(또는 D)로 시작해야 함
-    # - 기기의 gender 필드가 [유저성별, "both"] 중 하나여야 함
-    query = {
-        "item": {"$regex": f"^{prefix}"},
-        "gender": {"$in": [user_gender, "both"]}
-    }
+    if user_info:
+        user_gender = user_info.get("gender")
+    else:
+        user_gender = None
 
+    query = {}
+    if user_gender:
+        query = {
+            "item": {"$regex": f"^{prefix}"},
+            "gender": {"$in": [user_gender, "both"]},
+        }
+    else:
+        query = {
+            "item": {"$regex": f"^{prefix}"},
+        }
     # 2. DB 조회 (정렬이 필요하다면 .sort("item", 1) 추가 가능)
     machines = list(db.machine.find(query).sort("item", 1))
     print(machines)
     if prefix == "L":
-        return render_template("laundry-select.html", machines=machines, current_user=user_info)
-    elif prefix == "D": 
-        return render_template("dryer-select.html", machines=machines, current_user=user_info)
+        return render_template(
+            "laundry-select.html", machines=machines, current_user=user_info
+        )
+    elif prefix == "D":
+        return render_template(
+            "dryer-select.html", machines=machines, current_user=user_info
+        )
     else:
         abort(400, "유효한 기계 타입이 아닙니다.")
 
