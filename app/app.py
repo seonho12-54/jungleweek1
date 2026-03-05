@@ -21,6 +21,8 @@ from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 
 from datetime import datetime, timezone, timedelta
+from pymongo.errors import DuplicateKeyError
+
 
 import json
 import os
@@ -274,7 +276,12 @@ def create_reserve():
     for data in data_list:
         data["id"] = uid
         data["name"] = db.users.find_one({"id": uid}).get("name")
-    db.reserve.insert_many(data_list)
+
+    try:
+        db.reserve.insert_many(data_list, ordered=False)
+    except DuplicateKeyError:
+        abort(409, description="이미 예약된 시간대입니다.")
+
     return jsonify({"result": "success"})
 
 
