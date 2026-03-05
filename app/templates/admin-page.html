@@ -50,29 +50,27 @@
 
               <th class="p-4">신고 대상 (세탁기/건조기)</th>
 
-              <th class="p-4 rounded-tr-lg">관리</th>
+              <th class="p-4 rounded-tr-lg">예약 차단 설정</th>
             </tr>
           </thead>
 
-          <tbody id="reportTable">
-            <!-- ajax로 채워짐 -->
-          </tbody>
+          <tbody id="reportTable"></tbody>
         </table>
       </div>
     </main>
 
     <script>
-      // 토글 ON OFF 텍스트 변경 + 서버 전송
+      // 토글 텍스트 변경(운영중/차단됨) + 서버 전송
       function toggleText(checkbox, item) {
         const textSpan = checkbox.nextElementSibling.nextElementSibling
 
         if (checkbox.checked) {
-          textSpan.innerText = "ON"
+          textSpan.innerText = "차단됨"
           textSpan.classList.remove("text-gray-500")
-          textSpan.classList.add("text-blue-600")
+          textSpan.classList.add("text-red-600")
         } else {
-          textSpan.innerText = "OFF"
-          textSpan.classList.remove("text-blue-600")
+          textSpan.innerText = "운영중"
+          textSpan.classList.remove("text-red-600")
           textSpan.classList.add("text-gray-500")
         }
 
@@ -97,7 +95,6 @@
       function updateUI(reportData) {
         let reportUid = reportData.uid
         let reportItem = reportData.item
-        let reportDate = reportData.date
 
         let row = `
 <tr class="border-b">
@@ -119,7 +116,7 @@ class="sr-only peer"
 onchange="toggleText(this,'${reportItem}')">
 
 <div class="w-11 h-6 bg-gray-300 rounded-full peer
-peer-checked:bg-blue-600
+peer-checked:bg-red-500
 peer-checked:after:translate-x-full
 after:content-['']
 after:absolute
@@ -133,8 +130,8 @@ after:h-5
 after:w-5
 after:transition-all"></div>
 
-<span class="ml-3 text-sm font-bold text-gray-500 toggle-text">
-OFF
+<span class="ml-3 text-sm font-bold text-gray-500 toggle-text w-12">
+운영중
 </span>
 
 </label>
@@ -148,18 +145,22 @@ OFF
       }
 
       // 신고 목록 가져오기
-      $.ajax({
-        type: "GET",
-        url: "/report",
-        success: function (response) {
-          response.forEach(function (report) {
-            updateUI(report)
-          })
-        },
-
-        error: function () {
-          alert("데이터 가져오기 실패")
-        },
+      $(document).ready(function () {
+        $.ajax({
+          type: "GET",
+          url: "/report",
+          success: function (response) {
+            // response.result를 순회하여 UI 업데이트
+            if (response.result) {
+              response.result.forEach(function (report) {
+                updateUI(report)
+              })
+            }
+          },
+          error: function () {
+            alert("데이터 가져오기 실패")
+          },
+        })
       })
     </script>
   </body>

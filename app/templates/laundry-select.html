@@ -113,13 +113,15 @@
             <option value="">기기 선택</option>
             {% for item in machines %}
             <option value="{{ item.item }}">
-              {% if item.item == 'L1' %} 여성용 세탁기 1 {% elif item.item ==
-              'L2' %} 여성용 세탁기 2 {% elif item.item == 'L3' %} 공용 세탁기 1
-              {% elif item.item == 'L4' %} 공용 세탁기 2 {% elif item.item ==
-              'L5' %} 남성용 세탁기 1 {% elif item.item == 'L6' %} 남성용 세탁기
-              2 {% elif item.item == 'L7' %} 남성용 세탁기 3 {% elif item.item
-              == 'L8' %} 남성용 세탁기 4 {% elif item.item == 'L9' %} 남성용
-              세탁기 5 {% else %} 세탁기 {{ item.item }} {% endif %}
+              {% if item.item == 'L1' %} 남성용 세탁기 1 {% elif item.item ==
+              'L2' %} 남성용 세탁기 2 {% elif item.item == 'L3' %} 남성용 세탁기
+              3 {% elif item.item == 'L4' %} 남성용 세탁기 4 {% elif item.item
+              == 'L5' %} 남성용 세탁기 5 {% elif item.item == 'L6' %} 공용
+              세탁기 1 {% elif item.item == 'L7' %} 공용 세탁기 2 {% elif
+              item.item == 'L8' %} 여성용 세탁기 1 {% elif item.item == 'L9' %}
+              여성용 세탁기 2 {% else %} 세탁기 {{ item.item }} {% endif %} {#
+              사용 불가나 사용 중 상태 표시를 추가하면 더 친절합니다 #} {% if
+              item.ban %}(점검중){% endif %}
             </option>
             {% endfor %}
           </select>

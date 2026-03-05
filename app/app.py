@@ -88,7 +88,7 @@ def home():
     if current_user:
         user_info = db.users.find_one({"id": current_user})
         if user_info.get('role') == "ADMIN":
-            return render_template("admin-page.html")
+            return render_template("admin-page.html", user_info=user_info)
         else:
             return render_template("index.html", user_info=user_info)
     else:
