@@ -37,7 +37,58 @@
     </button> 
  -->
 
-    <!-- 대기중 카드 -->
+
+
+<!--대기중인카드 진자2코드-->
+
+
+<div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
+  {%for item in items %}
+    <button 
+      {% if item.ban or item.using %}
+        disabled
+        {%else%}
+        onclick = "location.href='time.html'"
+        {%endif%}
+        class="
+        {% if item.ban %}
+          bg-gray-400 cursor-not-allowed text-gray-700
+        {% elif item.using %}
+          bg-red-400 cursor-not-allowed
+        {% else %}
+          bg-blue-500 hover:bg-blue-400 active:translate-y-1 active:shadow-sm
+        {% endif %}
+        rounded-xl shadow-md p-12 text-center text-lg font-semibold
+        transform transition duration-100 text-white
+        "
+        >
+      🫧 {{ item.item }}
+      {% if item.ban %}
+        <div class="text-sm mt-3">🚫 사용불가</div>
+      {% elif item.using %}
+        <div class="text-sm mt-3">⏱ 사용경과 : {{ item.elapsed | default('계산중') }}</div>
+      {% else %}
+        <div class="text-sm mt-3">✅ 사용가능</div>
+      {% endif %}
+    </button>
+      {% endfor %}
+  </div>
+
+  <div class="flex justify-center mt-10 mb-20">
+    <button class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100">
+      신고하기
+    </button>
+  </div>
+      </button>
+
+
+</div>
+
+
+
+
+
+    <!-- 대기중 카드 
     <button onclick="location.href='time.html'" class="bg-blue-500 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-blue-500 active:translate-y-1 active:shadow-sm
                transform transition duration-100">   🫧 남성용 세탁기 1
     </button>
@@ -68,7 +119,7 @@
                transform transition duration-100">     신고하기
       </button>
   </div>
-        
+        -->
 <!--
   
 
@@ -110,6 +161,9 @@
 
 
   
+
+
+
    <!-- 로그인 모달 -->
  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
     
