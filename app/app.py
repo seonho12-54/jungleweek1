@@ -259,7 +259,7 @@ def create_reserve():
     validation_reserve(uid, data_list)
     for data in data_list:
         data["id"] = uid
-        data["id"] = uid
+        data["name"] = db.users.find_one({"id": uid}).get("name")
     db.reserve.insert_many(data_list)
     return jsonify({"result": "success"})
 
@@ -349,10 +349,13 @@ def find_machine(machine_type):
 def find_own_reserve(machine_type):
     uid = get_jwt_identity()
     prefix = "L" if machine_type == "laundry" else "D"
+    user = db.users.find_one({"id": uid})
+    name = user.get("name")
 
     reserve = db.reserve.find_one(
-        {"id": uid, "item": {"$regex": f"^{prefix}"}}, {"_id": 0}
+        {"id": uid, "item": {"$regex": f"^{prefix}"}}, {"_id": 0, "id": 0}
     )
+    reserve["name"] = name
     return jsonify(result=reserve)
 
 
