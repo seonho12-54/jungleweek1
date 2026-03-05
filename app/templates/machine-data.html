@@ -6,7 +6,6 @@
       contentType: "application/json",
       data: JSON.stringify({
         item: selectedMachine,
-        date: new Date().toLocaleString("ko-KR"),
       }),
       success: function (response) {
         alert("고장 신고가 완료되었습니다. 빠르게 확인 후 처리하겠습니다.")

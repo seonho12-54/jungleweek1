@@ -67,7 +67,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 class CustomJSONProvider(JSONProvider):
     def dumps(self, obj, **kwargs):
-        return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
+        return json.dumps(obj, **kwargs, cls=CustomJSONEncoder, ensure_ascii=False)
 
     def loads(self, s, **kwargs):
         return json.loads(s, **kwargs)
@@ -87,7 +87,10 @@ def home():
 
     if current_user:
         user_info = db.users.find_one({"id": current_user})
-        return render_template("index.html", user_info=user_info)
+        if user_info.get('role') == "ADMIN":
+            return render_template("admin-page.html")
+        else:
+            return render_template("index.html", user_info=user_info)
     else:
         return render_template("index.html")
 
@@ -103,6 +106,7 @@ def create_user():
     pwd = data["pwd"]
     # 해당 아이디로 이미 존재하는지 확인
     if db.users.find_one({"id": data["id"]}):
+        
         abort(409, description="이미 존재하는 id입니다.")
 
     encryptPwd = bcrypt.generate_password_hash(pwd)
@@ -319,9 +323,14 @@ def validation_reserve(uid, data_list):
 
         total = existing_minutes + req_minutes
         if total > 120:
+            error_info = {
+                "code" : 4999,
+                "description" :f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다."
+            }
+    
             abort(
                 400,
-                description=f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다.",
+                description=error_info,
             )
 
 
@@ -342,7 +351,7 @@ def find_reserve():
             reserve["own"] = True
         else:
             reserve["own"] = False
-    print(item)
+    print(reserves[:1])
     return render_template(
         "time.html", reserves=reserves, current_user=uid, machine_type=item
     )
@@ -450,8 +459,14 @@ def ban_machine():
 def check_admin_role(uid):
     user = db.users.find_one({"id": uid})
     role = user.get("role")
-    if role and role != "ADMIN":
-        abort(403, description="관리자 권한이 아닙니다.")
+    error_info = {
+        "code" : 4999,
+        "description" :"관리자 권한이 아닙니다."
+    }
+    
+    if not role or role != "ADMIN":
+        abort(409, description = error_info )
+
 
 
 # 에러핸들러
@@ -459,9 +474,20 @@ def check_admin_role(uid):
 @app.errorhandler(400)
 @app.errorhandler(401)
 @app.errorhandler(403)
-def handle_validation_error(e):
-    return jsonify({"result": "fail", "message": e.description}), e.code
+def handle_validation_error(e): 
+    error_data = e.description
+    
+    if isinstance(error_data, dict) and "code" in error_data:
+        return jsonify({
+            "result": "fail",
+            "info": error_data
+        }), e.code
+    
 
+    return jsonify({
+        "result": "fail",
+        "message": str(error_data)
+    }), e.code
 
 if __name__ == "__main__":
     db_setup_ttl_indexes()

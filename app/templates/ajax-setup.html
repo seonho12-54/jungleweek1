@@ -1,0 +1,15 @@
+<script>
+  $.ajaxSetup({
+    error: function (xhr) {
+      const response = xhr.responseJSON
+      console.log("ffffdsf")
+
+      // 1. response가 있고, info 안에 우리가 정의한 4999 코드가 있는 경우
+      if (response && response.info && response.info.code === 4999) {
+        console.log("asdsad")
+        alert("asdsadsa")
+        // alert("🚫 " + response.info.description)
+      }
+    },
+  })
+</script>

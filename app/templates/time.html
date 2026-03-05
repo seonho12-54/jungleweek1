@@ -24,7 +24,7 @@
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    {% include 'csrf-helper.html' %}
+    {% include 'ajax-setup.html' %} {% include 'csrf-helper.html' %}
     <!-- <div id="machine-type">{{ machine_type }}</div> -->
     <a
       href="{{ url_for('home') }}"
@@ -161,6 +161,9 @@
         </button>
       </div>
     </div>
+    <script id="reserves-data" type="application/json">
+      {{ reserves | tojson }}
+    </script>
 
     <script>
       const SLOT_STEP_SEC = 10 * 60
@@ -590,10 +593,10 @@
       function loadReservationsData() {
         const item = machineData?.item
         if (!item) return
-
+        console.log(item)
         $.ajax({
           type: "GET",
-          url: "nugadol.duckdns.org/reserve",
+          url: "/reserve",
           dataType: "json",
           headers: { "X-CSRF-TOKEN": csrf },
           data: { item: item },
@@ -625,6 +628,8 @@
             renderGrid()
           },
           error: function (xhr) {
+            errorMessage = xhr.responseJSON
+            alert(errorMessage.message)
             dbResult(xhr.responseJSON)
           },
         })
@@ -646,7 +651,12 @@
             loadReservationsData()
           },
           error: function (xhr) {
+            errorMessage = xhr.responseJSON
+
+            alert(errorMessage.info.description)
             dbResult(xhr.responseJSON)
+            // renderGrid()
+            renderReservations()
           },
         })
       }
@@ -669,8 +679,66 @@
         })
       }
 
+      function loadServerReservations() {
+        const serverReserves = JSON.parse(
+          document.getElementById("reserves-data").textContent,
+        )
+
+        console.log("📦 서버에서 받은 reserves:", serverReserves)
+
+        reservations.length = 0
+
+        serverReserves.forEach((r) => {
+          const ds = parseDateTime(r.start)
+          const de = parseDateTime(r.end)
+
+          console.log("🔎 파싱된 날짜:", ds, de)
+
+          if (!ds || !de) return
+
+          const di = dayIndexFromDate(ds)
+
+          console.log("📅 계산된 dayIndex:", di)
+
+          if (di < 0 || di > 6) return
+
+          const obj = {
+            dayIndex: di,
+            dateStr: dateStrForDayIndex(di),
+            startSec: secOfDayFromDate(ds),
+            endSec: secOfDayFromDate(de),
+            period: r.period,
+            item: r.item,
+            id: r.id,
+            own: !!r.own,
+            _id: r._id,
+          }
+
+          console.log("✅ reservations에 push:", obj)
+
+          reservations.push(obj)
+        })
+
+        console.log("📊 최종 reservations 배열:", reservations)
+      }
+      // function displayTimeGrid() {
+      //   const serverReserves = JSON.parse(
+      //     document.getElementById("reserves-data").textContent,
+      //   )
+      //   console.log(serverReserves)
+      //   // #timeGrid 안에 있는 모든 button을 찾아서 텍스트만 뽑아 배열로 만듭니다.
+      //   const times = $("#timeGrid button")
+      //     .map(function () {
+      //       return $(this).text()
+      //     })
+      //     .get()
+
+      //   console.log("현재 화면의 시간들:", times)
+      // }
+
       updateDayLabels()
       document.getElementById("ampm").value = ampmByDay[dayIndex]
+      loadServerReservations()
       renderGrid()
       renderReservations()
     </script>

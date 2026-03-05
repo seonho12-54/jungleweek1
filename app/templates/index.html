@@ -119,9 +119,7 @@
           src="{{ url_for('static', filename='images/사용자.png') }}"
           class="h-6 w-6 opacity-60"
         />
-        <span id="display-id" class="text-gray-600 font-medium"
-          >아이콘 클릭</span
-        >
+        <span id="display-id" class="text-gray-600 font-medium"></span>
       </div>
 
       <div
@@ -138,26 +136,58 @@
     {% endif %}
 
     <script>
-      // 3. 세탁기 버튼을 눌렀을 때 실행될 함수
-      function showMyWasher() {
-        if (myWasherData) {
-          // 예약이 있으면 가져온 JSON 데이터로 텍스트를 만듭니다.
-          let timeText = myWasherData.end + " ~ " + (myWasherData.period || "")
-          updateInfo(myWasherData.id, timeText)
-        } else {
-          // 예약이 없으면 없다고 표시합니다.
-          updateInfo("예약 없음", "--:--")
-        }
+      // 정보를 화면에 업데이트하는 공통 함수 (기존과 동일)
+      function updateInfo(name, time) {
+        $("#display-id").text(name)
+        $("#display-time").text(time)
       }
 
-      // 4. 건조기 버튼을 눌렀을 때 실행될 함수
+      // 세탁기 정보 가져오기
+      function showMyWasher() {
+        $.ajax({
+          type: "GET",
+          url: "/own/laundry",
+          success: function (response) {
+            let data = response.result
+            if (data) {
+              // "2026-03-06 07:10:00" -> "2026-03-06 07:10" (앞에서 16자)
+              let startFull = data.start.substring(0, 16)
+              let endFull = data.end.substring(0, 16)
+
+              // 만약 시작일과 종료일이 같다면 시간만 표시하고 싶을 수도 있지만,
+              // 요청하신 대로 풀 형식을 유지한다면 아래와 같이 구성합니다.
+              updateInfo(data.name, startFull + " ~ " + endFull.split(" ")[1])
+              // 결과 예: "홍길동", "2026-03-06 07:10 ~ 08:10"
+            } else {
+              updateInfo("예약 없음", "--:--")
+            }
+          },
+          error: function () {
+            alert("예약된 날짜가 없습니다.")
+          },
+        })
+      }
+
+      // 건조기 정보 가져오기
       function showMyDryer() {
-        if (myDryerData) {
-          let timeText = myDryerData.end + " ~ " + (myDryerData.period || "")
-          updateInfo(myDryerData.id, timeText)
-        } else {
-          updateInfo("예약 없음", "--:--")
-        }
+        $.ajax({
+          type: "GET",
+          url: "/own/dryer",
+          success: function (response) {
+            let data = response.result
+            if (data) {
+              let startFull = data.start.substring(0, 16)
+              let endFull = data.end.substring(0, 16)
+
+              updateInfo(data.name, startFull + " ~ " + endFull.split(" ")[1])
+            } else {
+              updateInfo("예약 없음", "--:--")
+            }
+          },
+          error: function () {
+            alert("예약된 날짜가 없습니다.")
+          },
+        })
       }
     </script>
   </body>
