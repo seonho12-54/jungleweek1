@@ -184,7 +184,51 @@ def refresh():
         # 새로운 refresh token 쿠키에 업데이트
         response = jsonify({"result": "success"})
 
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, new_refresh_token)
 
+        return response
+    else:
+        abort(401, description="접근 권한이 없습니다.")
+
+
+# refresh 토큰 암호화 (SHA-256 + salt)
+def refresh_token_hash(user_id, refresh_token, type):
+    salt = os.urandom(16).hex()
+
+    sha256_hash = hashlib.sha256()
+    combined_string = refresh_token + salt
+    sha256_hash.update(combined_string.encode("utf-8"))
+    hash_result = sha256_hash.hexdigest()
+
+    time_now = datetime.now(timezone.utc)
+
+    refresh_token_hashed = {
+        "user_id": user_id,
+        "refresh_token": hash_result,
+        "salt": salt,
+        "issued_at": time_now,
+        "expires_at": time_now + timedelta(days=7),
+    }
+
+    # 처음 로그인 할때 + key rotation 할때
+    db.refresh_tokens.update_one(
+        {"user_id": user_id}, {"$set": refresh_token_hashed}, upsert=True
+    )
+
+
+# refresh token rotation으로 한번 사용한 token 폐기
+def refresh_token_key_rotation(user_id):
+    refresh_token = create_refresh_token(identity=user_id)
+    refresh_token_hash(user_id, refresh_token, "update")
+    return refresh_token
+
+
+def db_setup_ttl_indexes():
+    db.refresh_tokens.create_index("expires_at", expireAfterSeconds=0)
+
+
+# 예약 생성
 @app.route("/reserve", methods=["POST"])
 @jwt_required()
 def create_reserve():
