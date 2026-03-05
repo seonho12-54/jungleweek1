@@ -29,7 +29,8 @@ load_dotenv()
 
 app = Flask(__name__)
 jwt = JWTManager(app)
-client = MongoClient("mongodb://localhost", 27017)
+database_url = os.environ.get("DATABASE_URL")
+client = MongoClient(database_url, 27017)
 db = client.dbjungle
 
 # flask-jwt-extended 관련 변수
