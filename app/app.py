@@ -47,6 +47,7 @@ app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
 app.config["JWT_COOKIE_CSRF_PROTECT"] = True
 app.config["JWT_ACCESS_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
 app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
+app.config["JWT_COOKIE_SECURE"] = True
 
 bcrypt = Bcrypt(app)
 
@@ -89,6 +90,11 @@ def home():
         return render_template("index.html", user_info=user_info)
     else:
         return render_template("index.html")
+
+
+@app.route("/register", methods=["GET"])
+def register():
+    return render_template("signup.html")
 
 
 @app.route("/user", methods=["POST"])
@@ -341,7 +347,12 @@ def find_machine(machine_type):
         db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0})  # _id 제외
     )
 
-    return jsonify(machines)
+    if prefix == "L":
+        return render_template("laundry-select.html", machines=machines)
+    elif prefix == "D":
+        return render_template("dryer-select.html", machines=machines)
+    else:
+        abort(400, "유효한 기계 타입이 아닙니다.")
 
 
 # 나의 예약 정보 조회
@@ -353,9 +364,21 @@ def find_own_reserve(machine_type):
     user = db.users.find_one({"id": uid})
     name = user.get("name")
 
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     reserve = db.reserve.find_one(
-        {"id": uid, "item": {"$regex": f"^{prefix}"}}, {"_id": 0, "id": 0}
+        {
+            "id": uid,
+            "item": {"$regex": f"^{prefix}"},
+            "end": {"$gte": now},  # 현재시간보다 종료시간이 크거나 같은 것
+        },
+        {"_id": 0, "id": 0},
+        sort=[("start", 1)],  # 그 중 가장 가까운 것
     )
+
+    if reserve is None:
+        return jsonify(result=None)
+
     reserve["name"] = name
     return jsonify(result=reserve)
 
