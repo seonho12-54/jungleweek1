@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>누가돌려?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+  <header class="flex justify-between items-center p-6">
+    <button onclick="location.href='index.html'" class="flex items-center gap-2 text-xl font-bold">
+      <span>누가돌려?</span>
+    </button>
+
+    <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2 rounded">
+      로그인
+    </button>
+  </header>
+
+  <h1 id="pageTitle" class="text-4xl font-bold text-center mb-10">세탁기</h1>
+
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid grid-cols-12 gap-10">
+      <div class="col-span-12 lg:col-span-7">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <label class="text-sm font-semibold text-neutral-700">AM/PM</label>
+            <select id="ampm" class="px-3 py-2 border border-neutral-300 rounded bg-white">
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+
+            <div id="rangeHint" class="text-xs text-neutral-500"></div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="prevDay" class="w-9 h-9 border border-neutral-300 rounded hover:bg-neutral-50">◀</button>
+
+            <div class="text-sm font-semibold text-neutral-800 w-52 text-center">
+              <span id="dayLabel">월</span>
+              <span class="text-neutral-500 font-normal" id="dateLabel"></span>
+            </div>
+
+            <button id="nextDay" class="w-9 h-9 border border-neutral-300 rounded hover:bg-neutral-50">▶</button>
+          </div>
+        </div>
+
+        <div class="mt-4 border-t border-neutral-700"></div>
+
+        <div class="mt-3">
+          <div id="timeGrid" class="grid grid-cols-6 gap-2"></div>
+        </div>
+
+        <div id="pickInfo" class="mt-3 text-sm text-neutral-700"></div>
+      </div>
+
+      <div class="col-span-12 lg:col-span-5">
+        <div class="text-lg font-bold text-neutral-800 text-center">예약 목록</div>
+
+        <div id="reservationList" class="mt-4 space-y-3"></div>
+
+        <button id="reserveBtn"
+          class="mt-10 w-full py-4 bg-blue-600 text-white text-2xl font-extrabold rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+          예약하기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+    <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+      <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">ID</label>
+        <input type="email" class="w-full border rounded px-3 py-2" placeholder="아이디를 입력하세요">
+      </div>
+      <div class="mb-6">
+        <label class="block mb-1 text-sm">Password</label>
+        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요">
+      </div>
+      <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        로그인
+      </button>
+      <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
+        닫기
+      </button>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <script>
+
+    const SLOT_STEP_MIN = 10;
+
+    const AM_START = { h: 6, m: 0 };
+    const AM_END   = { h: 11, m: 50 };
+
+    const PM_START = { h: 12, m: 0 };
+    const PM_END   = { h: 23, m: 50 };
+
+    const MAX_SELECT = 120;
+
+    const days = ["월","화","수","목","금","토","일"];
+    let dayIndex = 0;
+
+    const ampmByDay = Array(7).fill("AM");
+    const reservations = [];
+
+    let selectedStart = null;
+    let selectedEnd = null;
+
+    const now = new Date();
+    const jsDay = now.getDay();
+    const diffToMon = (jsDay === 0) ? -6 : (1 - jsDay);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMon);
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function fmtHM(totalMin){
+      const h = Math.floor(totalMin / 60) % 24;
+      const m = totalMin % 60;
+      return `${pad2(h)}:${pad2(m)}`;
+    }
+
+    function toTotalMin(h,m){ return h*60 + m; }
+
+    function dateStrForDayIndex(idx){
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + idx);
+      return `${d.getFullYear()}/${pad2(d.getMonth()+1)}/${pad2(d.getDate())}`;
+    }
+
+    function updateDayLabels(){
+      const dateStr = dateStrForDayIndex(dayIndex);
+      document.getElementById("dayLabel").textContent = days[dayIndex];
+      document.getElementById("dateLabel").textContent = ` (${dateStr})`;
+    }
+
+    function getRangeForAmpm(ampm){
+      if(ampm === "AM"){
+        return {
+          start: toTotalMin(AM_START.h, AM_START.m),
+          end:   toTotalMin(AM_END.h, AM_END.m),
+        };
+      }
+      return {
+        start: toTotalMin(PM_START.h, PM_START.m),
+        end:   toTotalMin(PM_END.h, PM_END.m),
+      };
+    }
+
+    function buildTimeSlots(ampm){
+      const {start, end} = getRangeForAmpm(ampm);
+      const slots = [];
+      for(let t=start; t<=end; t+=SLOT_STEP_MIN){
+        slots.push(t);
+      }
+      return slots;
+    }
+
+    function resetPick(){
+      selectedStart = null;
+      selectedEnd = null;
+    }
+
+    function overlaps(aStart, aEnd, bStart, bEnd){
+      return !(aEnd < bStart || bEnd < aStart);
+    }
+
+    function isReservedMinuteForDay(dayIdx, minute){
+      return reservations.some(r => r.dayIndex === dayIdx && r.start <= minute && minute <= r.end);
+    }
+
+    function isRangeSelectable(dayIdx, startMin, endMin){
+      const a = Math.min(startMin, endMin);
+      const b = Math.max(startMin, endMin);
+
+      for(let t=a; t<=b; t+=SLOT_STEP_MIN){
+        if(isReservedMinuteForDay(dayIdx, t)) return false;
+      }
+      return true;
+    }
+
+    function inCurrentPickRange(minute){
+      if(selectedStart == null) return false;
+      if(selectedEnd == null) return minute === selectedStart;
+      const a = Math.min(selectedStart, selectedEnd);
+      const b = Math.max(selectedStart, selectedEnd);
+      return a <= minute && minute <= b;
+    }
+
+    function getCurrentPickRange(){
+      if(selectedStart == null || selectedEnd == null) return null;
+      const startMin = Math.min(selectedStart, selectedEnd);
+      const endMin   = Math.max(selectedStart, selectedEnd);
+      return { startMin, endMin, dur: endMin - startMin };
+    }
+
+    function updatePickInfo(){
+      const info = document.getElementById("pickInfo");
+      const btn = document.getElementById("reserveBtn");
+      const ampm = document.getElementById("ampm").value;
+
+      const r = getCurrentPickRange();
+
+      const okDur = r.dur <= MAX_SELECT;
+      const okReserved = isRangeSelectable(dayIndex, r.startMin, r.endMin);
+
+      btn.disabled = !(okDur && okReserved);
+    }
+
+    function renderGrid(){
+      const ampm = document.getElementById("ampm").value;
+      const {hint} = getRangeForAmpm(ampm);
+      document.getElementById("rangeHint").textContent = hint;
+
+      const grid = document.getElementById("timeGrid");
+      grid.innerHTML = "";
+
+      const slots = buildTimeSlots(ampm);
+
+      slots.forEach(totalMin => {
+        const btn = document.createElement("button");
+
+        const reserved = isReservedMinuteForDay(dayIndex, totalMin);
+
+        let cls = "px-3 py-2 border rounded text-sm active:scale-[0.99] transition ";
+
+        if(reserved){
+          cls += "border-green-600 bg-green-100 text-green-800 opacity-70 cursor-not-allowed ";
+          btn.disabled = true;
+        } else {
+          cls += "border-neutral-200 hover:bg-neutral-50 ";
+        }
+
+        if(inCurrentPickRange(totalMin)){
+          cls = "px-3 py-2 border rounded text-sm active:scale-[0.99] transition border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100";
+          if(reserved){
+            cls += " opacity-70 cursor-not-allowed";
+            btn.disabled = true;
+          }
+        }
+
+        btn.className = cls;
+        btn.textContent = fmtHM(totalMin);
+
+        if(!reserved){
+          btn.addEventListener("click", () => onTimeClick(totalMin));
+        }
+
+        grid.appendChild(btn);
+      });
+
+      updatePickInfo();
+    }
+
+    function renderReservations(){
+      const list = document.getElementById("reservationList");
+      list.innerHTML = "";
+
+      [...reservations].slice().reverse().forEach((r) => {
+        const box = document.createElement("div");
+        box.className = "border border-neutral-200 rounded p-3 bg-neutral-50 flex items-start justify-between gap-3";
+
+        const left = document.createElement("div");
+        left.className = "text-sm text-neutral-800";
+        left.innerHTML = `
+          <div class="font-semibold">${r.dateStr} (${days[r.dayIndex]})</div>
+          <div class="text-neutral-700">${fmtHM(r.start)} ~ ${fmtHM(r.end)}</div>
+        `;
+
+        const del = document.createElement("button");
+        del.className = "text-xs px-2 py-1 border border-neutral-300 rounded hover:bg-white";
+        del.textContent = "삭제";
+        del.addEventListener("click", () => {
+          const idx = reservations.findIndex(x => x.id === r.id);
+          if(idx >= 0) reservations.splice(idx, 1);
+          renderReservations();
+          renderGrid();
+        });
+
+        box.appendChild(left);
+        box.appendChild(del);
+        list.appendChild(box);
+      });
+    }
+
+    function onTimeClick(totalMin){
+      if(selectedStart == null){
+        selectedStart = totalMin;
+        selectedEnd = null;
+        renderGrid();
+        return;
+      }
+
+
+      if(selectedEnd == null && totalMin === selectedStart){
+        resetPick();
+        renderGrid();
+        return;
+      }
+
+      if(selectedEnd == null){
+        const s = selectedStart;
+        const e = totalMin;
+
+        const startMin = Math.min(s, e);
+        const endMin   = Math.max(s, e);
+        const dur = endMin - startMin;
+
+        if(dur > MAX_SELECT){
+          alert("2시간 초과입니다.")
+          return;
+        }
+
+        if(!isRangeSelectable(dayIndex, startMin, endMin)){
+          return;
+        }
+
+        selectedEnd = totalMin;
+        renderGrid();
+        return;
+      }
+
+      selectedStart = totalMin;
+      selectedEnd = null;
+      renderGrid();
+    }
+
+    document.getElementById("reserveBtn").addEventListener("click", () => {
+      const pick = getCurrentPickRange();
+      if(!pick) return;
+
+      if(pick.dur > MAX_SELECT) return;
+      if(!isRangeSelectable(dayIndex, pick.startMin, pick.endMin)) return;
+      
+      reservations.push({
+        id: (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()),
+        dayIndex  ,
+        dateStr: dateStrForDayIndex(dayIndex),
+        start: pick.startMin,
+        end: pick.endMin,
+      });
+
+      saveReservationsData({
+        start: pick.startMin,
+        end: pick.endMin,
+        period: ampm,
+        item: "",
+      });
+
+      resetPick();
+      renderReservations();
+      renderGrid();
+    });
+
+    document.getElementById("ampm").addEventListener("change", () => {
+      ampmByDay[dayIndex] = document.getElementById("ampm").value;
+      resetPick();
+      renderGrid();
+    });
+
+    document.getElementById("prevDay").addEventListener("click", () => {
+      dayIndex = (dayIndex + 6) % 7;
+      document.getElementById("ampm").value = ampmByDay[dayIndex];
+      updateDayLabels();
+      resetPick();
+      renderGrid();
+      renderReservations();
+    });
+
+    document.getElementById("nextDay").addEventListener("click", () => {
+      dayIndex = (dayIndex + 1) % 7;
+      document.getElementById("ampm").value = ampmByDay[dayIndex];
+      updateDayLabels();
+      resetPick();
+      renderGrid();
+      renderReservations();
+    });
+
+    updateDayLabels();
+    document.getElementById("ampm").value = ampmByDay[dayIndex];
+    renderGrid();
+    renderReservations();
+
+    function OpenLogin() {
+      document.getElementById("loginModal").classList.remove("hidden");
+    }
+
+    function CloseLogin() {
+      document.getElementById("loginModal").classList.add("hidden");
+    }
+
+    // API
+    function saveReservationsData(saveData) {
+      $.ajax({
+        type: "POST",
+        url: "nugadol/reserve",
+        dataType: "JSON",
+        data: saveData,
+        success: function(response) {
+          console.log(response);
+        }
+      })
+    }
+
+    
+  </script>
+</body>
+</html>

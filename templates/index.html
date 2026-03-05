@@ -1,423 +1,91 @@
-<!-- #css
-1. padding : Object내의 안쪽여백
-- 1개 속성만 사용할 경우 안쪽여백
-- 단일속성 부여 가능
-
-2. margin : Object와 화면과의 여백(외부여백)
-- 시계방향 순서로 값 매김
-- 2개 속성만 사용할 경우 위아래 / 오른쪽 왼쪽 여백을 의미
-- 단일속성 부여 가능
-
-3. border : 요소의 테투리 설정
-- color, style, width 하위 속성을 포함
-- ex) border : 1px(너비), solid(스타일), white(색상)
-- border-radius : 테투리 경계의 꼭짓점을 둥글게 만드는 것
-
-4. resize : 요소의 크기를 사용자가 조절 할 수 있게 하는 것 -->
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css?family=Stylish&display=swap"
-      rel="stylesheet"
-    />
-
-    <title>나홀로메모장 ver2.0</title>
-
-    <style type="text/css">
-      * {
-        font-family: "Stylish", sans-serif;
-      }
-
-      body {
-        background-color: #f0f0f0;
-        padding: 50px 0;
-      }
-
-      .container {
-        max-width: 1200px;
-      }
-
-      /* 상단 입력 박스 스타일 */
-      .header-box {
-        background-color: white;
-        padding: 40px;
-        border-radius: 10px;
-        margin-bottom: 30px;
-      }
-
-      .header-box h1 {
-        margin-bottom: 20px;
-      }
-
-      /* 입력창 스타일 */
-      .input-group {
-        margin-bottom: 15px;
-      }
-
-      .input-group input,
-      .input-group textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #dddddd;
-        border-radius: 5px;
-      }
-
-      .input-group textarea {
-        resize: vertical;
-        min-height: 100px;
-      }
-
-      /* 저장하기 버튼 */
-      .btn-submit {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 30px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-
-      /* 메모 카드 스타일 */
-      .card {
-        margin-bottom: 20px;
-      }
-
-      .card-body {
-        padding: 20px;
-      }
-
-      .card-title {
-        font-size: 1.2em;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-
-      .card-text {
-        color: #666666;
-        margin-bottom: 15px;
-      }
-
-      /* 카드 하단 버튼 영역 */
-      .card-footer {
-        /* justify를 쓸거면 flex나 grid여야 한다. */
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 20px;
-        background-color: #f8f9fa;
-      }
-
-      .card-likes {
-        font-weight: bold;
-        margin-right: 5px;
-      }
-
-      .link-like {
-        cursor: pointer;
-        color: #007bff;
-        text-decoration: none;
-      }
-
-      /* 버튼 스타일 */
-      .btn-group button {
-        margin-left: 5px;
-        padding: 5px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
-
-      .edit-button {
-        background-color: #17a2b8;
-        color: white;
-      }
-
-      .delete-button {
-        background-color: #dc3545;
-        color: white;
-      }
-
-      .save-button {
-        background-color: #28a745;
-        color: white;
-      }
-
-      /* 수정 입력창 스타일 */
-      .new-title,
-      .new-text {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #dddddd;
-        border-radius: 5px;
-      }
-
-      .new-text {
-        resize: vertical;
-        min-height: 80px;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="container">
-      <!-- 상단 메모 입력 박스 -->
-      <div class="header-box">
-        <h1>
-          나홀로메모장
-          <span
-            style="
-              background-color: #666666;
-              color: white;
-              padding: 5px 15px;
-              border-radius: 5px;
-            "
-            >ver2.0</span
-          >
-        </h1>
-
-        <!-- 제목 입력 -->
-        <div class="input-group">
-          <!-- input은 한줄 입력 -->
-          <input type="text" id="memo-title" placeholder="제목을 입력하세요" />
-        </div>
-
-        <!-- 내용 입력 -->
-        <div class="input-group">
-          <!-- textarea는 여러 줄 / 단락 입력 -->
-          <textarea
-            id="memo-content"
-            placeholder="내용을 입력하세요"
-          ></textarea>
-        </div>
-
-        <!-- 저장 버튼 -->
-        <button type="submit" class="btn-submit" onclick="saveMemo()">
-          저장하기
-        </button>
-      </div>
-
-      <!-- 메모 카드들이 표시되는 영역 -->
-      <!-- 반응형을 위한 bootstrap 그리디 시스템 적용 -->
-      <div id="card-list" class="row row-cols-1 row-cols-md-3 g-4"></div>
+<head>
+  <!-- 여긴 임포트입니다-->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>누가돌려?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+</head>
+  <!-- 버튼 -->
+  <header class="flex">
+    <button class="flex items-left gap-2 border border-blue-500 text-blue-600 px-6 py-2">
+      <span>누가돌려</span>
     </div>
+    <button class="flex items-left gap-2 border border-blue-500 text-blue-600 px-6 py-2">
+        <span>신고하기</span>
+      </div>
+    <button onclick="OpenSign()" class=" border border-blue-500 text-blue-600 px-6 py-2">
+        회원가입
+    </button>
+    <button onclick="OpenLogin()" class="border border-blue-500 text-blue-600 px-6 py-2">
+      로그인
+    </button>
+  </header>
+  <h1 class="text-5xl font-bold text-blue-600">
+    누가돌려? made by tailwind    
+  </h1>
+<body class="h-screen bg-gray-100 flex flex-col items-center justify-center">
+  <div class="w-2/3 h-1/2 bg-gray-300 rounded-xl shadow-lg flex items-center justify-center gap-10 p-10">
+      <!--건조기와 세탁기-->
+     
+    <!-- 흰 박스 1 -->
+    <button class=" w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl trasition duration-300">
+        <img 
+          src="C:\Users\tedte\Downloads\jungle\건조기images.png"
+          class="h-40">
 
-    <!-- jQuery 라이브러리 (서버와 통신하기 위해 필요) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+        
+          <div class="p-1 text-middle">
+          <h2 class="text-xl font-bold mb-2">세탁기</h2>
+  </div>
+    </button>
 
-    <script>
-      // 1. 페이지가 로드되면 자동으로 메모 불러오기
-      $(document).ready(function () {
-        loadMemos(); // 저장된 메모들을 서버에서 가져와서 화면에 표시
-      });
+    <!-- 흰 박스 2 -->
+    <button class=" w-1/3 bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl trasition duration-300">
+        <img 
+          src="C:\Users\tedte\Downloads\jungle\125652.png"
+          class="h-40">
 
-      // 2. 새 메모 저장하기
-      function saveMemo() {
-        // 입력한 제목과 내용 가져오기
-        let title = $("#memo-title").val().trim();
-        let content = $("#memo-content").val().trim();
+        
+          <div class="p-1 text-middle">
+          <h2 class="text-xl font-bold mb-2">건조기</h2>
+    </button>
 
-        // 제목이나 내용이 비어있으면 경고
-        if (!title || !content) {
-          alert("제목과 내용을 모두 입력해주세요!");
-          return;
-        }
+  </div>
+  <!-- 로그인 모달 -->
+  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+    
+    <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+      <h2 class="text-2xl font-bold mb-6 text-left">Log In</h2>
+      <div class="mb-4">
+        <label class="block mb-1 text-sm">ID</label>
+        <input type="email" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요">
+      </div>
+      <div class="mb-6">
+        <label class="block mb-1 text-sm">Password</label>
+        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요">
+      </div>
+      <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        로그인
+      </button>
+      <button onclick="CloseLogin()" class="w-full mt-3 text-gray-500">
+        닫기
+      </button>
+    </div>
+    
+  </div>
 
-        // 서버에 메모 저장 요청
-        $.ajax({
-          type: "POST",
-          url: "/memo",
-          data: {
-            title_give: title,
-            content_give: content,
-          },
-          success: function (response) {
-            if (response["result"] == "success") {
-              alert("메모가 저장되었습니다!");
-              // 입력창 비우기
-              $("#memo-title").val("");
-              $("#memo-content").val("");
-              // 화면 새로고침
-              loadMemos();
-            } else {
-              alert("서버 오류!");
-            }
-          },
-        });
-      }
-
-      // 3. 저장된 메모들 불러오기
-
-      function loadMemos() {
-        // 서버에서 메모 목록 가져오기
-        $.ajax({
-          type: "GET",
-          url: "/memo",
-          success: function (response) {
-            let memos = response["memos"];
-
-            // 기존 카드들 모두 지우기
-            $("#card-list").empty();
-
-            // 각 메모를 카드로 만들어서 화면에 추가
-            for (let i = 0; i < memos.length; i++) {
-              makeCard(memos[i]);
-            }
-          },
-        });
-      }
-
-      // 4. 메모 카드 만들기
-      function makeCard(memo) {
-        // HTML 템플릿 만들기
-        let cardHtml = `
-          <div class="col">
-            <div class="card">
-              <div class="card-body">
-                <!-- 보기 모드 -->
-                <div id="view-${memo._id}">
-                  <div class="card-title">${memo.title}</div>
-                  <div class="card-text">${memo.content}</div>
-                </div>
-                
-                <!-- 수정 모드 (처음에는 숨김) -->
-                <div id="edit-${memo._id}" style="display: none;">
-                  <input type="text" class="new-title" value="${memo.title}" />
-                  <textarea class="new-text">${memo.content}</textarea>
-                </div>
-              </div>
-              
-              <!-- 하단 버튼 영역 -->
-              <div class="card-footer">
-                <div>
-                  <span class="card-likes">${memo.likes}</span>
-                  <a href="javascript:void(0)" class="link-like" onclick="likeMemo('${memo._id}')">좋아요! 👍</a>
-                </div>
-                
-                <!-- 버튼 그룹 -->
-                <div class="btn-group" id="buttons-${memo._id}">
-                  <button class="edit-button" onclick="startEdit('${memo._id}')">수정</button>
-                  <button class="delete-button" onclick="deleteMemo('${memo._id}')">삭제</button>
-                </div>
-                
-                <!-- 저장 버튼 (처음에는 숨김) -->
-                <div id="save-btn-${memo._id}" style="display: none;">
-                  <button class="save-button" onclick="saveEdit('${memo._id}')">저장</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-
-        // 카드를 화면에 추가
-        // append는 부모 자식을 연결해주는 것
-        // card-list (부모) cardHtml 부분 (자식) 이해하면 될 듯
-        $("#card-list").append(cardHtml);
-      }
-
-      // 5. 수정 모드로 전환
-      function startEdit(memoId) {
-        // 보기 모드 숨기기
-        $("#view-" + memoId).hide();
-        // 수정 입력창 보이기
-        $("#edit-" + memoId).show();
-        // 수정/삭제 버튼 숨기기
-        $("#buttons-" + memoId).hide();
-        // 저장 버튼 보이기
-        $("#save-btn-" + memoId).show();
-      }
-
-      // 6. 수정 내용 저장하기
-      function saveEdit(memoId) {
-        // 수정한 제목과 내용 가져오기
-        let newTitle = $("#edit-" + memoId)
-          .find(".new-title")
-          .val()
-          .trim();
-        let newContent = $("#edit-" + memoId)
-          .find(".new-text")
-          .val()
-          .trim();
-
-        if (!newTitle || !newContent) {
-          alert("제목과 내용을 모두 입력해주세요!");
-          return;
-        }
-
-        // 서버에 수정 요청
-        $.ajax({
-          type: "PUT",
-          url: "/memo",
-          data: {
-            id_give: memoId,
-            title_give: newTitle,
-            content_give: newContent,
-          },
-          success: function (response) {
-            if (response["result"] == "success") {
-              alert("메모가 수정되었습니다!");
-              // 화면 새로고침
-              loadMemos();
-            } else {
-              alert("서버 오류!");
-            }
-          },
-        });
-      }
-
-      // 7. 메모 삭제하기
-      function deleteMemo(memoId) {
-        if (!confirm("정말 삭제하시겠습니까?")) {
-          return;
-        }
-
-        // 서버에 삭제 요청
-        $.ajax({
-          type: "DELETE",
-          url: "/memo",
-          data: { id_give: memoId },
-          success: function (response) {
-            if (response["result"] == "success") {
-              alert("메모가 삭제되었습니다!");
-              // 화면 새로고침
-              loadMemos();
-            } else {
-              alert("서버 오류!");
-            }
-          },
-        });
-      }
-
-      // 8. 좋아요 누르기
-      function likeMemo(memoId) {
-        // 서버에 좋아요 요청
-        $.ajax({
-          type: "POST",
-          url: "/memo/like",
-          data: { id_give: memoId },
-          success: function (response) {
-            if (response["result"] == "success") {
-              // 좋아요 후 즉시 재정렬
-              loadMemos();
-            } else {
-              alert("서버 오류!");
-            }
-          },
-        });
-      }
-    </script>
-  </body>
-</html>
+  <script>
+    function OpenLogin() {
+      document.getElementById("loginModal").classList.remove("hidden");
+    }
+    
+    function CloseLogin() {
+      document.getElementById("loginModal").classList.add("hidden");
+    }
+  </script>
+  
+</body>
+<html/>
