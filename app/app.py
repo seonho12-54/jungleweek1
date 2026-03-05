@@ -91,6 +91,9 @@ def home():
     else:
         return render_template("index.html")
 
+@app.route("/register", methods=["GET"])
+def register():
+    return render_template("signup.html")
 
 @app.route("/user", methods=["POST"])
 def create_user():
@@ -341,7 +344,13 @@ def find_machine(machine_type):
         db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0})  # _id 제외
     )
 
-    return jsonify(machines)
+    if prefix == "L":
+        return render_template("laundry-select.html", machines=machines)
+    elif prefix == "D": 
+        return render_template("dryer-select.html", machines=machines)
+    else:
+        abort(400, "유효한 기계 타입이 아닙니다.")
+
 
 
 # 나의 예약 정보 조회
