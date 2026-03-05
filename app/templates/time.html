@@ -20,9 +20,12 @@
         },
       }
     </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   </head>
 
   <body class="bg-gray-100 min-h-screen">
+    {% include 'csrf-helper.html' %}
+    <!-- <div id="machine-type">{{ machine_type }}</div> -->
     <a
       href="{{ url_for('home') }}"
       class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
@@ -33,7 +36,7 @@
       />
     </a>
     <header class="flex">
-      {% if user_info %}
+      {% if current_user %}
       <button
         onclick="doLogout()"
         class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
@@ -158,14 +161,8 @@
         </button>
       </div>
     </div>
-    {% include 'load-machine.html' %}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-      $(document).ready(function () {
-        loadMachineData()
-        console.log("gsdf")
-      })
       const SLOT_STEP_SEC = 10 * 60
       const MAX_SELECT_SEC = 2 * 60 * 60
 
@@ -182,8 +179,6 @@
 
       let selectedStartSec = null
       let selectedEndSec = null
-
-      let machineData = null
 
       const now = new Date()
       const jsDay = now.getDay()
@@ -407,25 +402,25 @@
           })
       }
 
-      function loadMachineData() {
-        const params = new URLSearchParams(window.location.search)
-        const item = params.get("item") || ""
-        console.log(item)
-        if (!item || item.length < 2) return
+      // function loadMachineData() {
+      //   const params = new URLSearchParams(window.location.search)
+      //   const item = params.get("item") || ""
+      //   console.log(item)
+      //   if (!item || item.length < 2) return
 
-        machineData = { item }
+      //   machineData = { item }
 
-        const type = item[0]
-        const num = item.slice(1)
+      //   const type = item[0]
+      //   const num = item.slice(1)
 
-        let name = ""
-        if (type === "L") name = "세탁기"
-        else if (type === "D") name = "건조기"
+      //   let name = ""
+      //   if (type === "L") name = "세탁기"
+      //   else if (type === "D") name = "건조기"
 
-        document.getElementById("pageTitle").innerText = name + num
+      //   document.getElementById("pageTitle").innerText = name + num
 
-        loadReservationsData()
-      }
+      //   loadReservationsData()
+      // }
 
       function parseDateTime(str) {
         if (!str) return null
@@ -527,8 +522,9 @@
 
           if (pick.durSec > MAX_SELECT_SEC) return
           if (!isRangeSelectable(dayIndex, pick.startSec, pick.endSec)) return
-
-          if (!machineData || !machineData.item) return
+          const machineType = $("machine-type")
+          console.log(machineType)
+          if (!machineType) return
           console.log("테스트")
           const period = document.getElementById("ampm").value
 
@@ -537,7 +533,7 @@
               start: makeDateTime(dayIndex, pick.startSec),
               end: makeDateTime(dayIndex, pick.endSec),
               period: period,
-              item: machineData.item,
+              item: machineType.item,
             },
           ]
 
@@ -547,7 +543,7 @@
             startSec: pick.startSec,
             endSec: pick.endSec,
             period: period,
-            item: machineData.item,
+            item: machineType.item,
             own: true,
           })
 
@@ -635,11 +631,14 @@
       }
 
       function saveReservationsData(saveData) {
+        const machineType = "{{ machine_type }}"
+
+        saveData[0]["item"] = machineType
+        console.log(saveData)
         $.ajax({
           type: "POST",
-          url: "nugadol.duckdns.org/reserve",
+          url: "/reserve",
           dataType: "json",
-          headers: { "X-CSRF-TOKEN": csrf },
           contentType: "application/json; charset=utf-8",
           data: JSON.stringify(saveData),
           success: function (resp) {
@@ -670,7 +669,6 @@
         })
       }
 
-      loadMachineData()
       updateDayLabels()
       document.getElementById("ampm").value = ampmByDay[dayIndex]
       renderGrid()

@@ -122,9 +122,8 @@ def check_id():
     data = request.get_json()
 
     user_id = data.get("id")
-    print(user_id)
+
     if db.users.find_one({"id": user_id}):
-        print("here")
         abort(409, description="이미 존재하는 id입니다.")
     else:
         return jsonify({"result": "success", "message": "사용 가능한 id입니다."})
@@ -147,10 +146,10 @@ def login():
         abort(400, description="비밀번호가 비어 있습니다.")
 
     user = db.users.find_one({"id": user_id})
-    print(user)
+
     if user:
         if bcrypt.check_password_hash(user.get("pwd"), user_password):
-            print("inside bcrypt")
+ 
             access_token = create_access_token(identity=user_id)
             refresh_token = create_refresh_token(identity=user_id)
             refresh_token_hash(user_id, refresh_token, "new")
@@ -274,6 +273,7 @@ def create_reserve():
 
 def validation_reserve(uid, data_list):
     errors = []
+ 
     for req in data_list:
         # Validation 1: 시간대 + item 겹침 체크
         conflict = db.reserve.find_one(
@@ -324,10 +324,13 @@ def validation_reserve(uid, data_list):
 
 
 # 예약 조회
+
 @app.route("/reserve", methods=["GET"])
 @jwt_required(optional=True)
 def find_reserve():
+
     item = request.args.get("item")
+
     uid = get_jwt_identity()
     reserves = list(db.reserve.find({"item": item}))
 
@@ -336,33 +339,41 @@ def find_reserve():
             reserve["own"] = True
         else:
             reserve["own"] = False
-    return jsonify(result=reserves)
-
+    print(item)
+    return render_template('time.html', reserves=reserves, current_user=uid, machine_type=item)
 
 
 @app.route("/machine/<machine_type>", methods=["GET"])
 @jwt_required(optional=True)
 def find_machine(machine_type):
     prefix = "L" if machine_type == "laundry" else "D"
-   
-    # 기기 목록 가져오기
-    machines = list(db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0}))
-    
+
     # 현재 유저 정보 가져오기
     current_user_id = get_jwt_identity()
     user_info = None
-
     if current_user_id:
         user_info = db.users.find_one({'id': current_user_id})
+    
+    # 유저 성별 확인 (로그인 안 되어 있을 경우 기본값 처리 필요)
+    user_gender = user_info.get("gender") 
 
+    # 1. 쿼리 조건 설정: 
+    # - 아이템 이름이 L(또는 D)로 시작해야 함
+    # - 기기의 gender 필드가 [유저성별, "both"] 중 하나여야 함
+    query = {
+        "item": {"$regex": f"^{prefix}"},
+        "gender": {"$in": [user_gender, "both"]}
+    }
+
+    # 2. DB 조회 (정렬이 필요하다면 .sort("item", 1) 추가 가능)
+    machines = list(db.machine.find(query).sort("item", 1))
+    print(machines)
     if prefix == "L":
-        # current_user 대신 상세 정보가 담긴 user_info를 전달
         return render_template("laundry-select.html", machines=machines, current_user=user_info)
     elif prefix == "D": 
         return render_template("dryer-select.html", machines=machines, current_user=user_info)
     else:
         abort(400, "유효한 기계 타입이 아닙니다.")
-
 
 
 # 나의 예약 정보 조회
@@ -385,7 +396,6 @@ def find_own_reserve(machine_type):
 @app.route("/report", methods=["GET"])
 @jwt_required()
 def find_report():
-    print("신고기능")
     uid = get_jwt_identity()
     user = db.users.find_one({"id": uid})
     role = user.get("role")

@@ -47,7 +47,7 @@
     else %} {% set display_machines = machines %} {% endif %}
 
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
-      {% for item in display_machines %}
+      {% for item in machines %}
       <a
         {%
         if
@@ -59,10 +59,10 @@
         {%
         else
         %}
+        onclick="passMachineData('{{ item.item }}')"
         {%
         endif
         %}
-        href="{{ url_for('find_reserve') }}"
         class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 cursor-not-allowed text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
         <div>
@@ -106,13 +106,12 @@
         <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택</h2>
         <form id="reportForm">
           <select
-            id="machineselect"
+            id="machine-select"
             name="machine"
             class="w-full border rounded px-3 py-2 shadow"
           >
             <option value="">기기 선택</option>
-            {# 본인이 볼 수 있는 기기(display_machines)만 옵션으로 생성 #} {%
-            for item in display_machines %}
+            {% for item in machines %}
             <option value="{{ item.item }}">
               {% if item.item == 'L1' %} 여성용 세탁기 1 {% elif item.item ==
               'L2' %} 여성용 세탁기 2 {% elif item.item == 'L3' %} 공용 세탁기 1
@@ -160,7 +159,7 @@
       $("#reportForm").submit(function (e) {
         console.log("Here")
         e.preventDefault()
-        const selectedMachine = $("#machineselect").val()
+        const selectedMachine = $("#machine-select").val()
         if (!selectedMachine) {
           alert("기기를 선택해주세요.")
           return
@@ -179,6 +178,11 @@
           },
         })
       })
+
+      function passMachineData(machineType) {
+        const baseUrl = "{{ url_for('find_reserve') }}"
+        location.href = baseUrl + "?item=" + encodeURIComponent(machineType)
+      }
     </script>
   </body>
 </html>
