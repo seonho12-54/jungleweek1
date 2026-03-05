@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>누가돌려?</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    <!-- 상단 네비 -->
+    {% include 'csrf-helper.html' %}
     <header class="flex justify-between items-center p-6">
       <a
         href="{{ url_for('home') }}"
@@ -19,112 +20,128 @@
           class="h-16 w-auto"
         />
       </a>
-      <header class="flex">
+      <div class="flex">
+        {% if current_user %}
+        <button
+          onclick="doLogout()"
+          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
+        >
+          로그아웃
+        </button>
+        {% else %}
         <button
           onclick="OpenLogin()"
-          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
         >
           로그인
         </button>
-      </header>
+        {% endif %}
+      </div>
     </header>
 
-    <!-- 타이틀 -->
-    <h1 class="text-4xl font-bold text-center mb-10">세탁기</h1>
+    <h1 class="text-4xl font-bold text-center mb-10 mt-20">세탁기 선택</h1>
 
-    <!-- 카드 영역 -->
+    {% set display_machines = [] %} {% if current_user.gender == 'M' %} {% set
+    display_machines = machines[4:9] + machines[2:4] %} {% elif
+    current_user.gender == 'F' %} {% set display_machines = machines[0:4] %} {%
+    else %} {% set display_machines = machines %} {% endif %}
+
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
-      <!-- 대기중 카드 -->
+      {% for item in display_machines %}
       <a
+        {%
+        if
+        item.ban
+        or
+        item.using
+        %}
+        disabled
+        {%
+        else
+        %}
+        {%
+        endif
+        %}
         href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
+        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 cursor-not-allowed text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
-        🫧 남성용 세탁기 1
-      </a>
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 2
-      </a>
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 3
-      </a>
+        <div>
+          {% if item.item == 'L1' %} 여성용 세탁기 1 {% elif item.item == 'L2'
+          %} 여성용 세탁기 2 {% elif item.item == 'L3' %} 공용 세탁기 1 {% elif
+          item.item == 'L4' %} 공용 세탁기 2 {% elif item.item == 'L5' %} 남성용
+          세탁기 1 {% elif item.item == 'L6' %} 남성용 세탁기 2 {% elif
+          item.item == 'L7' %} 남성용 세탁기 3 {% elif item.item == 'L8' %}
+          남성용 세탁기 4 {% elif item.item == 'L9' %} 남성용 세탁기 5 {% else
+          %} 세탁기 {{ item.item }} {% endif %}
+        </div>
 
-      <!-- 사용중 카드 -->
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 4
+        {% if item.ban %}
+        <div class="text-sm mt-3 font-normal">🚫 사용불가</div>
+        {% elif item.using %}
+        <div class="text-sm mt-3 font-normal">
+          ⏱ 사용경과 : {{ item.elapsed | default('계산중') }}
+        </div>
+        {% else %}
+        <div class="text-sm mt-3 font-normal">✅ 사용가능</div>
+        {% endif %}
       </a>
-
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 5
-      </a>
-
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 공용 세탁기 1
-      </a>
-
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 공용 세탁기 2
-      </a>
+      {% endfor %}
     </div>
 
-    <!--
-  
+    <div class="flex justify-center mt-10 mb-20">
+      <button
+        onclick="OpenReport()"
+        class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100"
+      >
+        고장신고
+      </button>
+    </div>
 
-<div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
-
-{% for item in items %}
-
-  <button 
-    class="
-      {% if item.using == 'true' %}
-        bg-red-400 hover:bg-red-300
-      {% else %}
-        bg-green-400 hover:bg-green-500
-      {% endif %}
-      rounded-xl shadow-md p-12 text-center text-lg font-semibold
-      active:translate-y-1 active:shadow-sm
-      transform transition duration-100
-
-    "
-  >
-
-    🫧 {{ item.items }}
-
-    {% if item.using == 'true' %}
-      <div class="text-sm mt-3">
-        ⏱ 사용경과 : {{ item.elapsed }}
+    {% include 'common.html' %}
+    <div
+      id="reportmodal"
+      class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+    >
+      <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+        <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택</h2>
+        <form id="reportForm">
+          <select
+            id="machineselect"
+            name="machine"
+            class="w-full border rounded px-3 py-2 shadow"
+          >
+            <option value="">기기 선택</option>
+            {# 본인이 볼 수 있는 기기(display_machines)만 옵션으로 생성 #} {%
+            for item in display_machines %}
+            <option value="{{ item.item }}">
+              {% if item.item == 'L1' %} 여성용 세탁기 1 {% elif item.item ==
+              'L2' %} 여성용 세탁기 2 {% elif item.item == 'L3' %} 공용 세탁기 1
+              {% elif item.item == 'L4' %} 공용 세탁기 2 {% elif item.item ==
+              'L5' %} 남성용 세탁기 1 {% elif item.item == 'L6' %} 남성용 세탁기
+              2 {% elif item.item == 'L7' %} 남성용 세탁기 3 {% elif item.item
+              == 'L8' %} 남성용 세탁기 4 {% elif item.item == 'L9' %} 남성용
+              세탁기 5 {% else %} 세탁기 {{ item.item }} {% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <div class="flex justify-end mt-5 gap-2">
+            <button
+              type="button"
+              onclick="CloseReport()"
+              class="px-4 py-2 text-gray-500"
+            >
+              닫기
+            </button>
+            <button
+              type="submit"
+              class="bg-red-800 rounded-lg px-6 py-2 text-white font-semibold hover:bg-red-700"
+            >
+              고장신고
+            </button>
+          </div>
+        </form>
       </div>
-    {% endif %}
-
-  </button>
-
-{% endfor %}
-
-</div>
-
-
-
--->
-
-    <!-- 로그인 모달 -->
-    {% include 'modal.html' %}
+    </div>
 
     <script>
       function OpenLogin() {
@@ -133,6 +150,35 @@
       function CloseLogin() {
         document.getElementById("loginModal").classList.add("hidden")
       }
+      function OpenReport() {
+        document.getElementById("reportmodal").classList.remove("hidden")
+      }
+      function CloseReport() {
+        document.getElementById("reportmodal").classList.add("hidden")
+      }
+
+      $("#reportForm").submit(function (e) {
+        console.log("Here")
+        e.preventDefault()
+        const selectedMachine = $("#machineselect").val()
+        if (!selectedMachine) {
+          alert("기기를 선택해주세요.")
+          return
+        }
+        $.ajax({
+          type: "POST",
+          url: "/report",
+          contentType: "application/json",
+          data: JSON.stringify({
+            item: selectedMachine,
+            date: new Date().toLocaleString("ko-KR"),
+          }),
+          success: function (response) {
+            alert("고장 신고가 완료되었습니다. 빠르게 확인 후 처리하겠습니다.")
+            window.location.reload()
+          },
+        })
+      })
     </script>
   </body>
 </html>

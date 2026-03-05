@@ -5,28 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>누가돌려?</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Pretendard", "sans-serif"],
+            },
+          },
+        },
+      }
+    </script>
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    <header class="flex justify-between items-center p-6">
-      <a
-        href="{{ url_for('home') }}"
-        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
-      >
-        <img
-          src="{{ url_for('static', filename='images/로고.png') }}"
-          class="h-16 w-auto"
-        />
-      </a>
+    <a
+      href="{{ url_for('home') }}"
+      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    >
+      <img
+        src="{{ url_for('static', filename='images/로고.png') }}"
+        class="h-16 w-auto"
+      />
+    </a>
+    <header class="flex">
+      {% if user_info %}
       <button
-        onclick="OpenLogin()"
+        onclick="doLogout()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+      >
+        로그아웃
+      </button>
+      {% else %}
+      <button
+        onclick="openLogin()"
         class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
         로그인
       </button>
+      {% endif %}
     </header>
 
-    <h1 id="pageTitle" class="mt-10 text-4xl font-bold text-center mb-10">
+    <h1 id="pageTitle" class="mt-24 text-4xl font-bold text-center mb-10">
       세탁기
     </h1>
 
@@ -45,8 +69,6 @@
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
               </select>
-
-              <div id="rangeHint" class="text-xs text-neutral-500"></div>
             </div>
 
             <div class="flex items-center gap-2">
@@ -85,6 +107,7 @@
           <div id="pickInfo" class="mt-3 text-sm text-neutral-700"></div>
         </div>
 
+        {% if current_user %}
         <div class="col-span-12 lg:col-span-5">
           <div class="text-lg font-bold text-neutral-800 text-center">
             예약 목록
@@ -99,11 +122,11 @@
             예약하기
           </button>
         </div>
+        {% endif %}
       </div>
     </div>
 
-    {% include 'modal.html' %}
-    <!-- <div
+    <div
       id="loginModal"
       class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
     >
@@ -134,20 +157,22 @@
           닫기
         </button>
       </div>
-    </div> -->
-
+    </div>
+    {% include 'load-machine.html' %}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script>
-      const SLOT_STEP_MIN = 10
+      $(document).ready(function () {
+        loadMachineData()
+        console.log("gsdf")
+      })
+      const SLOT_STEP_SEC = 10 * 60
+      const MAX_SELECT_SEC = 2 * 60 * 60
 
       const AM_START = { h: 6, m: 0 }
       const AM_END = { h: 11, m: 50 }
-
       const PM_START = { h: 12, m: 0 }
       const PM_END = { h: 23, m: 50 }
-
-      const MAX_SELECT = 120
 
       const days = ["월", "화", "수", "목", "금", "토", "일"]
       let dayIndex = 0
@@ -155,27 +180,37 @@
       const ampmByDay = Array(7).fill("AM")
       const reservations = []
 
-      let selectedStart = null
-      let selectedEnd = null
+      let selectedStartSec = null
+      let selectedEndSec = null
+
+      let machineData = null
 
       const now = new Date()
       const jsDay = now.getDay()
       const diffToMon = jsDay === 0 ? -6 : 1 - jsDay
       const monday = new Date(now)
       monday.setDate(now.getDate() + diffToMon)
+      monday.setHours(0, 0, 0, 0)
+
+      function OpenLogin() {
+        document.getElementById("loginModal").classList.remove("hidden")
+      }
+      function CloseLogin() {
+        document.getElementById("loginModal").classList.add("hidden")
+      }
 
       function pad2(n) {
         return String(n).padStart(2, "0")
       }
 
-      function fmtHM(totalMin) {
-        const h = Math.floor(totalMin / 60) % 24
-        const m = totalMin % 60
+      function fmtHM(totalSec) {
+        const h = Math.floor(totalSec / 3600) % 24
+        const m = Math.floor((totalSec % 3600) / 60)
         return `${pad2(h)}:${pad2(m)}`
       }
 
-      function toTotalMin(h, m) {
-        return h * 60 + m
+      function toTotalSec(h, m) {
+        return h * 3600 + m * 60
       }
 
       function dateStrForDayIndex(idx) {
@@ -193,118 +228,138 @@
       function getRangeForAmpm(ampm) {
         if (ampm === "AM") {
           return {
-            start: toTotalMin(AM_START.h, AM_START.m),
-            end: toTotalMin(AM_END.h, AM_END.m),
+            start: toTotalSec(AM_START.h, AM_START.m),
+            end: toTotalSec(AM_END.h, AM_END.m),
           }
         }
         return {
-          start: toTotalMin(PM_START.h, PM_START.m),
-          end: toTotalMin(PM_END.h, PM_END.m),
+          start: toTotalSec(PM_START.h, PM_START.m),
+          end: toTotalSec(PM_END.h, PM_END.m),
         }
       }
 
       function buildTimeSlots(ampm) {
         const { start, end } = getRangeForAmpm(ampm)
         const slots = []
-        for (let t = start; t <= end; t += SLOT_STEP_MIN) {
-          slots.push(t)
-        }
+        for (let t = start; t <= end; t += SLOT_STEP_SEC) slots.push(t)
         return slots
       }
 
       function resetPick() {
-        selectedStart = null
-        selectedEnd = null
+        selectedStartSec = null
+        selectedEndSec = null
       }
 
-      function overlaps(aStart, aEnd, bStart, bEnd) {
-        return !(aEnd < bStart || bEnd < aStart)
-      }
-
-      function isReservedMinuteForDay(dayIdx, minute) {
-        return reservations.some(
-          (r) => r.dayIndex === dayIdx && r.start <= minute && minute <= r.end,
+      function getReservedStatusForDay(dayIdx, sec) {
+        const hit = reservations.find(
+          (r) => r.dayIndex === dayIdx && r.startSec <= sec && sec <= r.endSec,
         )
+        if (!hit) return null
+        return hit.own ? "own" : "other"
       }
 
-      function isRangeSelectable(dayIdx, startMin, endMin) {
-        const a = Math.min(startMin, endMin)
-        const b = Math.max(startMin, endMin)
+      function isReservedSecondForDay(dayIdx, sec) {
+        return !!getReservedStatusForDay(dayIdx, sec)
+      }
 
-        for (let t = a; t <= b; t += SLOT_STEP_MIN) {
-          if (isReservedMinuteForDay(dayIdx, t)) return false
+      function isRangeSelectable(dayIdx, startSec, endSec) {
+        const a = Math.min(startSec, endSec)
+        const b = Math.max(startSec, endSec)
+        for (let t = a; t <= b; t += SLOT_STEP_SEC) {
+          if (isReservedSecondForDay(dayIdx, t)) return false
         }
         return true
       }
 
-      function inCurrentPickRange(minute) {
-        if (selectedStart == null) return false
-        if (selectedEnd == null) return minute === selectedStart
-        const a = Math.min(selectedStart, selectedEnd)
-        const b = Math.max(selectedStart, selectedEnd)
-        return a <= minute && minute <= b
+      function inCurrentPickRange(sec) {
+        if (selectedStartSec == null) return false
+        if (selectedEndSec == null) return sec === selectedStartSec
+        const a = Math.min(selectedStartSec, selectedEndSec)
+        const b = Math.max(selectedStartSec, selectedEndSec)
+        return a <= sec && sec <= b
       }
 
       function getCurrentPickRange() {
-        if (selectedStart == null || selectedEnd == null) return null
-        const startMin = Math.min(selectedStart, selectedEnd)
-        const endMin = Math.max(selectedStart, selectedEnd)
-        return { startMin, endMin, dur: endMin - startMin }
+        if (selectedStartSec == null || selectedEndSec == null) return null
+        const startSec = Math.min(selectedStartSec, selectedEndSec)
+        const endSec = Math.max(selectedStartSec, selectedEndSec)
+        return { startSec, endSec, durSec: endSec - startSec }
       }
 
       function updatePickInfo() {
         const info = document.getElementById("pickInfo")
         const btn = document.getElementById("reserveBtn")
-        const ampm = document.getElementById("ampm").value
-
         const r = getCurrentPickRange()
 
-        const okDur = r.dur <= MAX_SELECT
-        const okReserved = isRangeSelectable(dayIndex, r.startMin, r.endMin)
+        if (!r) {
+          info.textContent = ""
+          if (btn) btn.disabled = true
+          return
+        }
 
-        btn.disabled = !(okDur && okReserved)
+        const okDur = r.durSec <= MAX_SELECT_SEC
+        const okReserved = isRangeSelectable(dayIndex, r.startSec, r.endSec)
+
+        const durMin = Math.floor(r.durSec / 60)
+        info.textContent = `${fmtHM(r.startSec)} ~ ${fmtHM(r.endSec)} (${durMin}분)`
+        if (btn) btn.disabled = !(okDur && okReserved)
+      }
+
+      function isPastSlot(dayIdx, sec) {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + dayIdx)
+
+        const h = Math.floor(sec / 3600)
+        const m = Math.floor((sec % 3600) / 60)
+        const s = sec % 60
+
+        d.setHours(h, m, s, 0)
+        return d.getTime() < Date.now()
       }
 
       function renderGrid() {
         const ampm = document.getElementById("ampm").value
-        const { hint } = getRangeForAmpm(ampm)
-        document.getElementById("rangeHint").textContent = hint
-
         const grid = document.getElementById("timeGrid")
         grid.innerHTML = ""
 
         const slots = buildTimeSlots(ampm)
 
-        slots.forEach((totalMin) => {
+        slots.forEach((sec) => {
           const btn = document.createElement("button")
 
-          const reserved = isReservedMinuteForDay(dayIndex, totalMin)
+          const reservedStatus = getReservedStatusForDay(dayIndex, sec)
+          const reserved = !!reservedStatus
+          const past = isPastSlot(dayIndex, sec)
 
           let cls =
             "px-3 py-2 border rounded text-sm active:scale-[0.99] transition "
 
-          if (reserved) {
+          if (reservedStatus === "own") {
             cls +=
               "border-green-600 bg-green-100 text-green-800 opacity-70 cursor-not-allowed "
+            btn.disabled = true
+          } else if (reservedStatus === "other") {
+            cls +=
+              "border-red-600 bg-red-100 text-red-800 opacity-70 cursor-not-allowed "
+            btn.disabled = true
+          } else if (past) {
+            cls +=
+              "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed "
             btn.disabled = true
           } else {
             cls += "border-neutral-200 hover:bg-neutral-50 "
           }
 
-          if (inCurrentPickRange(totalMin)) {
+          if (inCurrentPickRange(sec) && !reserved && !past) {
             cls =
               "px-3 py-2 border rounded text-sm active:scale-[0.99] transition border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100"
-            if (reserved) {
-              cls += " opacity-70 cursor-not-allowed"
-              btn.disabled = true
-            }
           }
 
           btn.className = cls
-          btn.textContent = fmtHM(totalMin)
+          btn.textContent = fmtHM(sec)
 
-          if (!reserved) {
-            btn.addEventListener("click", () => onTimeClick(totalMin))
+          if (!reserved && !past) {
+            btn.addEventListener("click", () => onTimeClick(sec))
           }
 
           grid.appendChild(btn)
@@ -315,6 +370,8 @@
 
       function renderReservations() {
         const list = document.getElementById("reservationList")
+        if (!list) return
+
         list.innerHTML = ""
         ;[...reservations]
           .slice()
@@ -328,18 +385,20 @@
             left.className = "text-sm text-neutral-800"
             left.innerHTML = `
           <div class="font-semibold">${r.dateStr} (${days[r.dayIndex]})</div>
-          <div class="text-neutral-700">${fmtHM(r.start)} ~ ${fmtHM(r.end)}</div>
+          <div class="text-neutral-700">${fmtHM(r.startSec)} ~ ${fmtHM(r.endSec)}</div>
         `
 
             const del = document.createElement("button")
             del.className =
               "text-xs px-2 py-1 border border-neutral-300 rounded hover:bg-white"
             del.textContent = "삭제"
+
+            const pk = r._id
+            del.disabled = !pk || !r.own
+
             del.addEventListener("click", () => {
-              const idx = reservations.findIndex((x) => x.id === r.id)
-              if (idx >= 0) reservations.splice(idx, 1)
-              renderReservations()
-              renderGrid()
+              if (!pk || !r.own) return
+              deleteReservationsData(pk)
             })
 
             box.appendChild(left)
@@ -348,75 +407,157 @@
           })
       }
 
-      function onTimeClick(totalMin) {
-        if (selectedStart == null) {
-          selectedStart = totalMin
-          selectedEnd = null
+      function loadMachineData() {
+        const params = new URLSearchParams(window.location.search)
+        const item = params.get("item") || ""
+        console.log(item)
+        if (!item || item.length < 2) return
+
+        machineData = { item }
+
+        const type = item[0]
+        const num = item.slice(1)
+
+        let name = ""
+        if (type === "L") name = "세탁기"
+        else if (type === "D") name = "건조기"
+
+        document.getElementById("pageTitle").innerText = name + num
+
+        loadReservationsData()
+      }
+
+      function parseDateTime(str) {
+        if (!str) return null
+        const parts = String(str).trim().split(" ")
+        if (parts.length < 2) return null
+
+        const [y, mo, da] = parts[0].split("-").map(Number)
+        const [hh, mi, ss] = parts[1].split(":").map(Number)
+
+        if (!y || !mo || !da) return null
+        return new Date(y, mo - 1, da, hh || 0, mi || 0, ss || 0, 0)
+      }
+
+      function secOfDayFromDate(d) {
+        return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()
+      }
+
+      function dayIndexFromDate(d) {
+        const a = new Date(monday)
+        a.setHours(0, 0, 0, 0)
+        const b = new Date(d)
+        b.setHours(0, 0, 0, 0)
+        return Math.round((b.getTime() - a.getTime()) / 86400000)
+      }
+
+      function makeDateTime(dayIdx, sec) {
+        const d = new Date(monday)
+        d.setDate(monday.getDate() + dayIdx)
+
+        const h = Math.floor(sec / 3600)
+        const m = Math.floor((sec % 3600) / 60)
+        const s = sec % 60
+
+        const yyyy = d.getFullYear()
+        const mm = pad2(d.getMonth() + 1)
+        const dd = pad2(d.getDate())
+
+        const hh = pad2(h)
+        const mi = pad2(m)
+        const ss = pad2(s)
+
+        return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`
+      }
+
+      function onTimeClick(sec) {
+        if (isPastSlot(dayIndex, sec)) return
+
+        if (selectedStartSec == null) {
+          selectedStartSec = sec
+          selectedEndSec = null
           renderGrid()
           return
         }
 
-        if (selectedEnd == null && totalMin === selectedStart) {
+        if (selectedEndSec == null && sec === selectedStartSec) {
           resetPick()
           renderGrid()
           return
         }
 
-        if (selectedEnd == null) {
-          const s = selectedStart
-          const e = totalMin
+        if (selectedEndSec == null) {
+          const startSec = Math.min(selectedStartSec, sec)
+          const endSec = Math.max(selectedStartSec, sec)
+          const durSec = endSec - startSec
 
-          const startMin = Math.min(s, e)
-          const endMin = Math.max(s, e)
-          const dur = endMin - startMin
-
-          if (dur > MAX_SELECT) {
+          if (durSec > MAX_SELECT_SEC) {
             alert("2시간 초과입니다.")
             return
           }
 
-          if (!isRangeSelectable(dayIndex, startMin, endMin)) {
+          if (!isRangeSelectable(dayIndex, startSec, endSec)) {
             return
           }
 
-          selectedEnd = totalMin
+          selectedEndSec = sec
           renderGrid()
           return
         }
 
-        selectedStart = totalMin
-        selectedEnd = null
+        selectedStartSec = sec
+        selectedEndSec = null
         renderGrid()
       }
 
-      document.getElementById("reserveBtn").addEventListener("click", () => {
-        const pick = getCurrentPickRange()
-        if (!pick) return
+      function getCookie(name) {
+        const value = `; ${document.cookie}`
+        const parts = value.split(`; ${name}=`)
+        if (parts.length === 2) return parts.pop().split(";").shift()
+        return ""
+      }
 
-        if (pick.dur > MAX_SELECT) return
-        if (!isRangeSelectable(dayIndex, pick.startMin, pick.endMin)) return
+      const csrf = getCookie("csrf_access_token")
 
-        reservations.push({
-          id: crypto?.randomUUID
-            ? crypto.randomUUID()
-            : String(Date.now()) + Math.random(),
-          dayIndex,
-          dateStr: dateStrForDayIndex(dayIndex),
-          start: pick.startMin,
-          end: pick.endMin,
+      const reserveBtnEl = document.getElementById("reserveBtn")
+      if (reserveBtnEl) {
+        reserveBtnEl.addEventListener("click", () => {
+          const pick = getCurrentPickRange()
+          if (!pick) return
+
+          if (pick.durSec > MAX_SELECT_SEC) return
+          if (!isRangeSelectable(dayIndex, pick.startSec, pick.endSec)) return
+
+          if (!machineData || !machineData.item) return
+          console.log("테스트")
+          const period = document.getElementById("ampm").value
+
+          const saveData = [
+            {
+              start: makeDateTime(dayIndex, pick.startSec),
+              end: makeDateTime(dayIndex, pick.endSec),
+              period: period,
+              item: machineData.item,
+            },
+          ]
+
+          reservations.push({
+            dayIndex,
+            dateStr: dateStrForDayIndex(dayIndex),
+            startSec: pick.startSec,
+            endSec: pick.endSec,
+            period: period,
+            item: machineData.item,
+            own: true,
+          })
+
+          saveReservationsData(saveData)
+
+          resetPick()
+          renderReservations()
+          renderGrid()
         })
-
-        saveReservationsData({
-          start: pick.startMin,
-          end: pick.endMin,
-          period: ampm,
-          item: "",
-        })
-
-        resetPick()
-        renderReservations()
-        renderGrid()
-      })
+      }
 
       document.getElementById("ampm").addEventListener("change", () => {
         ampmByDay[dayIndex] = document.getElementById("ampm").value
@@ -442,31 +583,98 @@
         renderReservations()
       })
 
+      function dbResult(response) {
+        if (!response.ok) {
+          alert(xhr.responseJSON.msg)
+          return true
+        }
+        return false
+      }
+
+      function loadReservationsData() {
+        const item = machineData?.item
+        if (!item) return
+
+        $.ajax({
+          type: "GET",
+          url: "nugadol.duckdns.org/reserve",
+          dataType: "json",
+          headers: { "X-CSRF-TOKEN": csrf },
+          data: { item: item },
+          success: function (resp) {
+            const list = resp?.result || []
+            reservations.length = 0
+            ;(list || []).forEach((r) => {
+              const ds = parseDateTime(r.start)
+              const de = parseDateTime(r.end)
+              if (!ds || !de) return
+
+              const di = dayIndexFromDate(ds)
+              if (di < 0 || di > 6) return
+
+              reservations.push({
+                dayIndex: di,
+                dateStr: dateStrForDayIndex(di),
+                startSec: secOfDayFromDate(ds),
+                endSec: secOfDayFromDate(de),
+                period: r.period,
+                item: r.item,
+                id: r.id,
+                own: !!r.own,
+                _id: r._id,
+              })
+            })
+
+            renderReservations()
+            renderGrid()
+          },
+          error: function (xhr) {
+            dbResult(xhr.responseJSON)
+          },
+        })
+      }
+
+      function saveReservationsData(saveData) {
+        $.ajax({
+          type: "POST",
+          url: "nugadol.duckdns.org/reserve",
+          dataType: "json",
+          headers: { "X-CSRF-TOKEN": csrf },
+          contentType: "application/json; charset=utf-8",
+          data: JSON.stringify(saveData),
+          success: function (resp) {
+            if (dbResult(resp)) return
+            loadReservationsData()
+          },
+          error: function (xhr) {
+            dbResult(xhr.responseJSON)
+          },
+        })
+      }
+
+      function deleteReservationsData(pk) {
+        if (!pk) return
+
+        $.ajax({
+          type: "DELETE",
+          url: `/reserve/${encodeURIComponent(pk)}`,
+          dataType: "json",
+          headers: { "X-CSRF-TOKEN": csrf },
+          success: function (resp) {
+            if (dbResult(resp)) return
+            loadReservationsData()
+          },
+          error: function (xhr) {
+            dbResult(xhr.responseJSON)
+          },
+        })
+      }
+
+      loadMachineData()
       updateDayLabels()
       document.getElementById("ampm").value = ampmByDay[dayIndex]
       renderGrid()
       renderReservations()
-
-      function OpenLogin() {
-        document.getElementById("loginModal").classList.remove("hidden")
-      }
-
-      function CloseLogin() {
-        document.getElementById("loginModal").classList.add("hidden")
-      }
-
-      // API
-      function saveReservationsData(saveData) {
-        $.ajax({
-          type: "POST",
-          url: "nugadol/reserve",
-          dataType: "JSON",
-          data: saveData,
-          success: function (response) {
-            console.log(response)
-          },
-        })
-      }
     </script>
   </body>
 </html>

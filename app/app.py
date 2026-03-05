@@ -120,9 +120,11 @@ def create_user():
 @app.route("/user/check-id", methods=["POST"])
 def check_id():
     data = request.get_json()
-    user_id = data["id"]
 
+    user_id = data.get("id")
+    print(user_id)
     if db.users.find_one({"id": user_id}):
+        print("here")
         abort(409, description="이미 존재하는 id입니다.")
     else:
         return jsonify({"result": "success", "message": "사용 가능한 id입니다."})
@@ -325,31 +327,39 @@ def validation_reserve(uid, data_list):
 @app.route("/reserve", methods=["GET"])
 @jwt_required(optional=True)
 def find_reserve():
+    item = request.args.get("item")
     uid = get_jwt_identity()
-    reserves = list(db.reserve.find({}, {"_id": 0}))
+    reserves = list(db.reserve.find({"item": item}))
 
     for reserve in reserves:
         if uid and reserve["id"] == uid:
             reserve["own"] = True
         else:
             reserve["own"] = False
-    return render_template('time.html', reserves=reserves)
+    return jsonify(result=reserves)
 
 
-# 세탁기/건조기 조회
+
 @app.route("/machine/<machine_type>", methods=["GET"])
+@jwt_required(optional=True)
 def find_machine(machine_type):
     prefix = "L" if machine_type == "laundry" else "D"
+   
+    # 기기 목록 가져오기
+    machines = list(db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0}))
+    
+    # 현재 유저 정보 가져오기
+    current_user_id = get_jwt_identity()
+    user_info = None
 
-    # item이 prefix로 시작하는 machine 목록 조회
-    machines = list(
-        db.machine.find({"item": {"$regex": f"^{prefix}"}}, {"_id": 0})  # _id 제외
-    )
+    if current_user_id:
+        user_info = db.users.find_one({'id': current_user_id})
 
     if prefix == "L":
-        return render_template("laundry-select.html", machines=machines)
+        # current_user 대신 상세 정보가 담긴 user_info를 전달
+        return render_template("laundry-select.html", machines=machines, current_user=user_info)
     elif prefix == "D": 
-        return render_template("dryer-select.html", machines=machines)
+        return render_template("dryer-select.html", machines=machines, current_user=user_info)
     else:
         abort(400, "유효한 기계 타입이 아닙니다.")
 
@@ -375,6 +385,7 @@ def find_own_reserve(machine_type):
 @app.route("/report", methods=["GET"])
 @jwt_required()
 def find_report():
+    print("신고기능")
     uid = get_jwt_identity()
     user = db.users.find_one({"id": uid})
     role = user.get("role")

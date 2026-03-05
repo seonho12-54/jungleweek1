@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="ko">
   <head>
-    <!-- 여긴 임포트입니다-->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>누가돌려?</title>
@@ -9,6 +8,7 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
     />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -23,17 +23,18 @@
     </script>
   </head>
 
-  <!-- 상단 네비 -->
-  <header class="flex justify-between items-center p-6">
-     <a
-      href="{{ url_for('home') }}"
-      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
-    >
-      <img
-        src="{{ url_for('static', filename='images/로고.png') }}"
-        class="h-16 w-auto"
-      />
-    </a>
+  <body>
+    <header class="flex justify-between items-center p-6">
+      <a
+        href="{{ url_for('home') }}"
+        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+      >
+        <img
+          src="{{ url_for('static', filename='images/로고.png') }}"
+          class="h-16 w-auto"
+          alt="로고"
+        />
+      </a>
 
       <button
         onclick="OpenLogin()"
@@ -41,12 +42,11 @@
       >
         로그인
       </button>
+    </header>
 
-  </header>
-  <body>
     <div class="flex flex-col justify-center sm:h-screen p-4">
       <div
-        class="max-w-md w-full mx-auto border border-gray-300 rounded-2xl p-8"
+        class="max-w-lg w-full mx-auto border border-gray-300 rounded-2xl p-8"
       >
         <div class="text-center mb-12">
           <a href="javascript:void(0)"
@@ -58,24 +58,41 @@
           </a>
         </div>
 
-        <form>
+        <form id="imfoma">
           <div class="space-y-6">
             <div>
               <label class="text-slate-900 text-sm font-medium mb-2 block"
                 >아이디</label
               >
-              <input
-                name="email"
-                type="text"
-                class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
-                placeholder="아이디를 입력하세요"
-              />
+              <div class="flex gap-2">
+                <input
+                  id="signupId"
+                  name="email"
+                  type="text"
+                  class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
+                  placeholder="아이디를 입력하세요"
+                />
+                <button
+                  type="button"
+                  id="id-same-check-btn"
+                  class="shrink-0 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md border border-gray-300 hover:bg-gray-200 transition-colors"
+                >
+                  중복 확인
+                </button>
+              </div>
             </div>
+            <!-- <p
+              class="mt-2 text-sm text-pink-600 invisible invalid:visible"
+              id="-error"
+            >
+              Please enter a valid email address.
+            </p> -->
             <div>
               <label class="text-slate-900 text-sm font-medium mb-2 block"
                 >비밀번호</label
               >
               <input
+                id="signupPw"
                 name="password"
                 type="password"
                 class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
@@ -87,6 +104,7 @@
                 >비밀번호 확인</label
               >
               <input
+                id="signupPwc"
                 name="cpassword"
                 type="password"
                 class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
@@ -95,9 +113,40 @@
             </div>
           </div>
 
+          <div class="flex mt-5">
+            <div class="flex items-center me-4">
+              <input
+                id="inline-radio"
+                type="radio"
+                value="M"
+                name="gender"
+                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              />
+              <label
+                for="inline-radio"
+                class="select-none ms-2 text-sm font-medium text-heading"
+                >남자</label
+              >
+            </div>
+            <div class="flex items-center me-4">
+              <input
+                id="inline-2-radio"
+                type="radio"
+                value="F"
+                name="gender"
+                class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              />
+              <label
+                for="inline-2-radio"
+                class="select-none ms-2 text-sm font-medium text-heading"
+                >여자</label
+              >
+            </div>
+          </div>
+
           <div class="mt-12">
             <button
-              type="button"
+              type="submit"
               class="w-full py-3 px-4 text-sm tracking-wider font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer"
             >
               계정 생성
@@ -106,57 +155,91 @@
           <p class="text-slate-600 text-sm mt-6 text-center">
             계정이 이미 있으신가요?
             <a
-              id="loginModal"
+              href="javascript:void(0)"
+              onclick="OpenLogin()"
               class="text-blue-600 font-medium hover:underline ml-1"
               >로그인</a
             >
           </p>
         </form>
       </div>
-  <!-- 로그인 모달 -->
-    {% include 'modal.html' %}
-   <script>
+    </div>
+
+    {% include 'common.html' %}
+
+    <script>
+      // id 중복확인 (버튼 클릭 이벤트로 수정)
+      $("#id-same-check-btn").click(function (e) {
+        const userId = $("#signupId").val()
+        if (!userId) {
+          alert("아이디를 입력해주세요")
+          return
+        }
+
+        $.ajax({
+          type: "POST",
+          url: "/user/check-id",
+          contentType: "application/json",
+          data: JSON.stringify({
+            id: userId,
+          }),
+          success: function (response) {
+            alert(response.message)
+          },
+          error: function (xhr) {
+            if (xhr.status === 409) {
+              alert("id가 이미 존재합니다.")
+            }
+          },
+        })
+      })
+
+      //회원정보 ajax
+      $("#imfoma").submit(function (e) {
+        e.preventDefault()
+
+        const userId = $("#signupId").val()
+        const userPw = $("#signupPw").val()
+        const userPwc = $("#signupPwc").val()
+        const userGender = $('input[name="gender"]:checked').val()
+
+        const userName = "사용자"
+        if (userId === "") {
+        }
+        if (userPw !== userPwc) {
+          alert("비밀번호가 서로 일치하지 않습니다!")
+          return
+        }
+
+        $.ajax({
+          type: "POST",
+          url: "/user",
+          contentType: "application/json",
+          data: JSON.stringify({
+            id: userId,
+            pwd: userPw,
+            gender: userGender,
+            name: userName,
+          }),
+          success: function (response) {
+            alert("회원가입이 완료되었습니다!")
+            window.location.href = "/" // 메인으로 이동
+          },
+          error: function (xhr) {
+            alert("회원가입에 실패했습니다.")
+          },
+        })
+      })
+
       function OpenLogin() {
-        document.getElementById("loginModal").classList.remove("hidden")
+        // common.html에 있는 모달의 실제 ID를 확인해야 합니다.
+        const modal = document.getElementById("loginModal")
+        if (modal) modal.classList.remove("hidden")
       }
       function CloseLogin() {
-        document.getElementById("loginModal").classList.add("hidden")
+        const modal = document.getElementById("loginModal")
+        if (modal) modal.classList.add("hidden")
       }
     </script>
-    <!-- <div class="w-2/3 h-2/5 bg-gray-300 rounded-xl shadow-lg  gap-10 p-10">
-    <form>
-    <div class="mb-4">
-        <label class="block mb-1 text-sm">ID</label>
-        <input type="email" class="w-full border rounded px-3 py-2 " placeholder="아이디를 입력하세요" required>
-      </div>
-      <div class="mb-4">
-        <label class="block mb-1 text-sm">Password</label>
-        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 입력하세요" required>
-      </div>
-       <div class="mb-6">
-        <label class="block mb-1 text-sm">Password Comfirm</label>
-        <input type="password" class="w-full border rounded px-3 py-2" placeholder="비밀번호를 한번 더 입력하세요" required>
-      </div>
-
-      <div class="mb-8">
-        <label class="block mb-2 text-sm">성별</label>
-        <div class="flex items-center gap-6">
-          <label class="flex items-center gap-2 cursor-pointer text-sm">
-            <input type="radio" name="gender" value="male" class="w-4 h-4 text-blue-600 focus:ring-blue-500" required>
-            남성
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer text-sm">
-            <input type="radio" name="gender" value="female" class="w-4 h-4 text-blue-600 focus:ring-blue-500" required>
-            여성
-          </label>
-        </div>
-      </div>
-
-        <button class="w-full bg-blue-600 text-white font-bold py-1.5 rounded-xl shadow-md hover:bg-blue-700 transition duration-300">
-            <p>회원가입</p>
-        </button>
-    </form>
-
-  </div> -->
   </body>
 </html>

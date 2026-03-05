@@ -1,89 +1,187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>누가돌려?</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>누가돌려? - 건조기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
 
-
-
-<body class="bg-gray-100 min-h-screen">
-
-  <!-- 상단 네비 -->
-  <header class="flex justify-between items-center p-6">
-    <a
-      href="{{ url_for('home') }}"
-      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
-    >
-      <img
-        src="{{ url_for('static', filename='images/로고.png') }}"
-        class="h-16 w-auto"
-      />
-    </a>
-    <header class="flex">
-      <button
-        onclick="OpenLogin()"
-        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+  <body class="bg-gray-100 min-h-screen">
+    {% include 'csrf-helper.html' %}
+    <header class="flex justify-between items-center p-6">
+      <a
+        href="{{ url_for('home') }}"
+        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
       >
-        로그인
-      </button>
+        <img
+          src="{{ url_for('static', filename='images/로고.png') }}"
+          class="h-16 w-auto"
+        />
+      </a>
+      <div class="flex">
+        {% if current_user %}
+        <button
+          onclick="doLogout()"
+          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
+        >
+          로그아웃
+        </button>
+        {% else %}
+        <button
+          onclick="OpenLogin()"
+          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
+        >
+          로그인
+        </button>
+        {% endif %}
+      </div>
     </header>
-  </header>
 
-  <!-- 타이틀 -->
-  <h1 class="text-4xl font-bold text-center mb-10">세탁기</h1>
+    <h1 class="text-4xl font-bold text-center mb-10 mt-20">건조기 선택</h1>
 
-  <!-- 카드 영역 -->
-  <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
-
-    <!-- 대기중 카드 -->
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
+    <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
+      {# 성별에 따른 리스트 순서 및 필터링 로직 #} {% set display_dryers = [] %}
+      {% if current_user.gender == 'M' %} {# 남성: 남성용(D5~D9) + 공용(D3, D4)
+      순서 #} {% set display_dryers = machines[4:9] + machines[2:4] %} {% elif
+      current_user.gender == 'F' %} {# 여성: 여성용(D1, D2) + 공용(D3, D4) 순서
+      #} {% set display_dryers = machines[0:4] %} {% else %} {# 비로그인 시 전체
+      표시 #} {% set display_dryers = machines %} {% endif %} {% for item in
+      display_dryers %}
+      <button
+        {%
+        if
+        item.ban
+        or
+        item.using
+        %}
+        disabled
+        {%
+        else
+        %}
+        onclick="location.href = 'time.html'"
+        {%
+        endif
+        %}
+        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 cursor-not-allowed text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
-        ♨️ 공용 건조기 1
-      </a>
-          <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        ♨️ 공용 건조기 2
-      </a>
-          <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        ♨️ 여성용 건조기 1
-      </a>
-      <a
-        href="{{ url_for('find_reserve') }}"
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        ♨️ 여성용 건조기 2
-      </a>
+        <div>
+          {% if item.item == 'D1' %} 여성용 건조기 1 {% elif item.item == 'D2'
+          %} 여성용 건조기 2 {% elif item.item == 'D3' %} 공용 건조기 1 {% elif
+          item.item == 'D4' %} 공용 건조기 2 {% elif item.item == 'D5' %} 남성용
+          건조기 1 {% elif item.item == 'D6' %} 남성용 건조기 2 {% elif
+          item.item == 'D7' %} 남성용 건조기 3 {% elif item.item == 'D8' %}
+          남성용 건조기 4 {% elif item.item == 'D9' %} 남성용 건조기 5 {% else
+          %} 건조기 {{ item.item }} {% endif %}
+        </div>
 
-  </div>
-</div>
-  <div class="flex justify-center mt-10 mb-20">
-  <button class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-700 active:translate-y-1 active:shadow-sm
-               transform transition duration-100">     신고하기
-    </button>
-  </div>
-  
-  
+        {% if item.ban %}
+        <div class="text-sm mt-3 font-normal">🚫 사용불가</div>
+        {% elif item.using %}
+        <div class="text-sm mt-3 font-normal">
+          ⏱ 사용경과 : {{ item.elapsed | default('계산중') }}
+        </div>
+        {% else %}
+        <div class="text-sm mt-3 font-normal">✅ 사용가능</div>
+        {% endif %}
+      </button>
+      {% endfor %}
+    </div>
 
-    <!-- 로그인 모달 -->
-    {% include 'modal.html' %}
-   <script>
+    <div class="flex justify-center mt-10 mb-20">
+      <button
+        onclick="OpenReport()"
+        class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100"
+      >
+        신고하기
+      </button>
+    </div>
+
+    {% include 'common.html' %}
+
+    <div
+      id="reportmodal"
+      class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+    >
+      <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
+        <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택 (건조기)</h2>
+        <form id="reportForm">
+          <select
+            id="machineselect"
+            name="machine"
+            class="w-full border rounded px-3 py-2 shadow"
+          >
+            <option value="">기기 선택</option>
+            {% for item in machines %}
+            <option value="{{ item.item }}">건조기 {{ item.item }}</option>
+            {% endfor %}
+          </select>
+          <div class="flex justify-end mt-5 gap-2">
+            <button
+              type="button"
+              onclick="CloseReport()"
+              class="px-4 py-2 text-gray-500"
+            >
+              닫기
+            </button>
+            <button
+              type="submit"
+              class="bg-red-800 rounded-lg px-6 py-2 text-white font-semibold hover:bg-red-700"
+            >
+              신고하기
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
       function OpenLogin() {
         document.getElementById("loginModal").classList.remove("hidden")
       }
       function CloseLogin() {
         document.getElementById("loginModal").classList.add("hidden")
       }
-    </script>
+      function OpenReport() {
+        document.getElementById("reportmodal").classList.remove("hidden")
+      }
+      function CloseReport() {
+        document.getElementById("reportmodal").classList.add("hidden")
+      }
 
-</body>
+      function doLogout() {
+        $.ajax({
+          type: "POST",
+          url: "/logout",
+          success: function (response) {
+            alert("로그아웃 되었습니다.")
+            window.location.reload()
+          },
+        })
+      }
+
+      $("#reportForm").submit(function (e) {
+        e.preventDefault()
+        const selectedMachine = $("#machineselect").val()
+        if (!selectedMachine) {
+          alert("기기를 선택해주세요.")
+          return
+        }
+        $.ajax({
+          type: "POST",
+          url: "/report",
+          contentType: "application/json",
+          data: JSON.stringify({
+            item: selectedMachine,
+            date: new Date().toLocaleString("ko-KR"),
+          }),
+          success: function (response) {
+            alert("신고완료!")
+            window.location.reload()
+          },
+        })
+      })
+    </script>
+  </body>
 </html>
