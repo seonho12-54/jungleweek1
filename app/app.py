@@ -319,8 +319,9 @@ def validation_reserve(uid, data_list):
 @app.route("/reserve", methods=["GET"])
 @jwt_required(optional=True)
 def find_reserve():
+    item = request.args.get("item")
     uid = get_jwt_identity()
-    reserves = list(db.reserve.find({}, {"_id": 0}))
+    reserves = list(db.reserve.find({"item": item}, {"_id": 0}))
 
     for reserve in reserves:
         if uid and reserve["id"] == uid:
