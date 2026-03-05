@@ -71,7 +71,7 @@ def create_user():
        'pwd' : encryptPwd,
        'gender' : data['gender'],
        'name' : data['name'],
-       'role' : 'user'
+       'role' : 'USER'
    }
 
    db.users.insert_one(user)
@@ -178,12 +178,29 @@ def find_own_reserve(machine_type):
 def find_report():
     uid = get_jwt_identity()
     user = db.users.find_one({"id":uid})
-    if user.get('role') != 'ADMIN' :
+    role = user.get('role')
+    if role and role != 'ADMIN' :
         abort(403, description='관리자 권한이 아닙니다.')
     
-    report = list(db.report.find())
+    report = list(db.report.find({},{'_id':0}))
     return jsonify(result=report)
-    
+
+# 고장 신고 
+@app.route('/report', methods=['POST'])
+@jwt_required()
+def create_report():
+    data = request.get_json()
+    uid = get_jwt_identity()
+
+    report = {
+        'item' : data.get('item'),
+        'date' : datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'uid' : uid
+    }
+    db.report.insert_one(report)
+    return jsonify(result='success')
+
+
 # 에러핸들러
 @app.errorhandler(409)
 @app.errorhandler(400)
