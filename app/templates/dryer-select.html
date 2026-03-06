@@ -9,71 +9,59 @@
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    {% include 'csrf-helper.html' %}
-    <header class="flex justify-between items-center p-6">
-      <a
-        href="{{ url_for('home') }}"
-        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    {% include 'common.html' %}
+    <a
+      href="{{ url_for('home') }}"
+      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    >
+      <img
+        src="{{ url_for('static', filename='images/로고.png') }}"
+        class="h-16 w-auto"
+      />
+    </a>
+    <header class="flex">
+      {% if current_user %}
+      <button
+        onclick="doLogout()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
-        <img
-          src="{{ url_for('static', filename='images/로고.png') }}"
-          class="h-16 w-auto"
-        />
-      </a>
-      <div class="flex">
-        {% if current_user %}
-        <button
-          onclick="doLogout()"
-          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
-        >
-          로그아웃
-        </button>
-        {% else %}
-        <button
-          onclick="OpenLogin()"
-          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
-        >
-          로그인
-        </button>
-        {% endif %}
-      </div>
+        로그아웃
+      </button>
+      {% else %}
+      <button
+        onclick="openLogin()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+      >
+        로그인
+      </button>
+      {% endif %}
     </header>
 
     <h1 class="text-4xl font-bold text-center mb-10 mt-20">건조기 선택</h1>
 
+    {% set display_dryers = [] %} {% if current_user.gender == 'M' %} {% set
+    display_dryers = machines[4:9] + machines[2:4] %} {% elif
+    current_user.gender == 'F' %} {% set display_dryers = machines[0:4] %} {%
+    else %} {% set display_dryers = machines %} {% endif %}
+
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
-      {# 성별에 따른 리스트 순서 및 필터링 로직 #} {% set display_dryers = [] %}
-      {% if current_user.gender == 'M' %} {# 남성: 남성용(D5~D9) + 공용(D3, D4)
-      순서 #} {% set display_dryers = machines[4:9] + machines[2:4] %} {% elif
-      current_user.gender == 'F' %} {# 여성: 여성용(D1, D2) + 공용(D3, D4) 순서
-      #} {% set display_dryers = machines[0:4] %} {% else %} {# 비로그인 시 전체
-      표시 #} {% set display_dryers = machines %} {% endif %} {% for item in
-      display_dryers %}
-      <button
-        {%
-        if
-        item.ban
-        or
-        item.using
-        %}
+      {% for item in machines %}
+      <a
+        {% if item.ban %}
         disabled
-        {%
-        else
-        %}
-        onclick="location.href = 'time.html'"
-        {%
-        endif
-        %}
-        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 cursor-not-allowed text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
+        {% else %}
+        onclick="passMachineData('{{ item.item }}')"
+        {% endif %}
+        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 hover:bg-red-500 active:translate-y-1 active:shadow-sm cursor-pointer text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
         <div>
-          {% if item.item == 'D1' %} 여성용 건조기 1 {% elif item.item == 'D2'
-          %} 여성용 건조기 2 {% elif item.item == 'D3' %} 공용 건조기 1 {% elif
-          item.item == 'D4' %} 공용 건조기 2 {% elif item.item == 'D5' %} 남성용
-          건조기 1 {% elif item.item == 'D6' %} 남성용 건조기 2 {% elif
-          item.item == 'D7' %} 남성용 건조기 3 {% elif item.item == 'D8' %}
-          남성용 건조기 4 {% elif item.item == 'D9' %} 남성용 건조기 5 {% else
-          %} 건조기 {{ item.item }} {% endif %}
+          {% if item.item == 'D1' %} 남성용 건조기 1 {% elif item.item == 'D2'
+          %} 남성용 건조기 2 {% elif item.item == 'D3' %} 남성용 건조기 3 {%
+          elif item.item == 'D4' %} 남성용 건조기 4 {% elif item.item == 'D5' %}
+          남성용 건조기 5 {% elif item.item == 'D6' %} 공용 건조기 1 {% elif
+          item.item == 'D7' %} 공용 건조기 2 {% elif item.item == 'D8' %} 여성용
+          건조기 1 {% elif item.item == 'D9' %} 여성용 건조기 2 {% else %}
+          건조기 {{ item.item }} {% endif %}
         </div>
 
         {% if item.ban %}
@@ -83,9 +71,9 @@
           ⏱ 사용경과 : {{ item.elapsed | default('계산중') }}
         </div>
         {% else %}
-        <div class="text-sm mt-3 font-normal">✅ 사용가능</div>
+        <div class="text-sm mt-3 font-normal">✅ 예약가능</div>
         {% endif %}
-      </button>
+      </a>
       {% endfor %}
     </div>
 
@@ -98,14 +86,13 @@
       </button>
     </div>
 
-    {% include 'common.html' %}
-
     <div
       id="reportmodal"
       class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
     >
       <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
         <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택 (건조기)</h2>
+
         <form id="reportForm">
           <select
             id="machineselect"
@@ -113,10 +100,29 @@
             class="w-full border rounded px-3 py-2 shadow"
           >
             <option value="">기기 선택</option>
+
             {% for item in machines %}
-            <option value="{{ item.item }}">건조기 {{ item.item }}</option>
+            <option
+              value="{{ item.item }}"
+              {%
+              if
+              item.ban
+              %}disabled{%
+              endif
+              %}
+            >
+              {% if item.item == 'D1' %} 남성용 건조기 1 {% elif item.item ==
+              'D2' %} 남성용 건조기 2 {% elif item.item == 'D3' %} 남성용 건조기
+              3 {% elif item.item == 'D4' %} 남성용 건조기 4 {% elif item.item
+              == 'D5' %} 남성용 건조기 5 {% elif item.item == 'D6' %} 공용
+              건조기 1{% elif item.item == 'D7' %} 공용 건조기 2 {% elif
+              item.item == 'D8' %} 여성용 건조기 1 {% elif item.item == 'D9' %}
+              여성용 건조기 2 {% else %} 건조기 {{ item.item }} {% endif %} {%
+              if item.ban %}(점검중){% endif %}
+            </option>
             {% endfor %}
           </select>
+
           <div class="flex justify-end mt-5 gap-2">
             <button
               type="button"
@@ -125,6 +131,7 @@
             >
               닫기
             </button>
+
             <button
               type="submit"
               class="bg-red-800 rounded-lg px-6 py-2 text-white font-semibold hover:bg-red-700"
@@ -137,12 +144,9 @@
     </div>
 
     <script>
-      function OpenLogin() {
-        document.getElementById("loginModal").classList.remove("hidden")
-      }
-      function CloseLogin() {
-        document.getElementById("loginModal").classList.add("hidden")
-      }
+      function OpenLogin() { openLogin() }
+      function CloseLogin() { closeLogin() }
+
       function OpenReport() {
         document.getElementById("reportmodal").classList.remove("hidden")
       }
@@ -150,24 +154,16 @@
         document.getElementById("reportmodal").classList.add("hidden")
       }
 
-      function doLogout() {
-        $.ajax({
-          type: "POST",
-          url: "/logout",
-          success: function (response) {
-            alert("로그아웃 되었습니다.")
-            window.location.reload()
-          },
-        })
-      }
-
       $("#reportForm").submit(function (e) {
         e.preventDefault()
+
         const selectedMachine = $("#machineselect").val()
+
         if (!selectedMachine) {
           alert("기기를 선택해주세요.")
           return
         }
+
         $.ajax({
           type: "POST",
           url: "/report",
@@ -182,6 +178,12 @@
           },
         })
       })
+
+      function passMachineData(machineType) {
+        const baseUrl = "{{ url_for('find_reserve') }}"
+
+        location.href = baseUrl + "?item=" + encodeURIComponent(machineType)
+      }
     </script>
   </body>
 </html>

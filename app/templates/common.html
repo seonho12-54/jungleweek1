@@ -1,9 +1,19 @@
 <!-- 로그인 모달 -->
 <div
   id="loginModal"
-  class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
+  onclick="closeLogin()"
+  class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
 >
-  <div class="bg-gray-50 max-w-[480px] w-full">
+  <div
+    class="bg-gray-50 max-w-[480px] w-full relative"
+    onclick="event.stopPropagation()"
+  >
+    <button
+      onclick="closeLogin()"
+      class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
+    >
+      &times;
+    </button>
     <div class="flex flex-col items-center justify-center py-6 px-4">
       <div class="max-w-[480px] w-full">
         <a href="javascript:void(0)"
@@ -45,10 +55,11 @@
                   ></path>
                 </svg>
               </div>
+              <p id="id-error" class="mt-1 text-sm text-red-500 pl-1 hidden">
+                아이디를 입력해 주세요.
+              </p>
             </div>
-            <p id="id-error" class="text-sm text-red-600 hidden">
-              아이디를 입력해 주세요
-            </p>
+
             <div>
               <label class="text-slate-900 text-sm font-medium mb-2 block"
                 >비밀번호</label
@@ -75,7 +86,12 @@
                   ></path>
                 </svg>
               </div>
+              <p id="pwd-error" class="mt-1 text-sm text-red-500 pl-1 hidden">
+                비밀번호를 입력해 주세요.
+              </p>
             </div>
+
+            <p id="login-error" class="text-sm text-red-500 pl-1 hidden"></p>
 
             <div class="!mt-12">
               <button
@@ -107,6 +123,9 @@
     }
 
     function closeLogin() {
+      $("#id-error").addClass("hidden")
+      $("#pwd-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
       document.getElementById("loginModal").classList.add("hidden")
     }
 
@@ -117,28 +136,50 @@
       return ""
     }
 
-    // 로그인
+    // 입력 시작하면 에러 메시지 숨기기
+    $("#id").on("input", function () {
+      $("#id-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+    })
+    $("#pwd").on("input", function () {
+      $("#pwd-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+    })
+
     $("#login-button").on("click", function (e) {
       e.preventDefault()
 
       const userId = $("#id").val()
       const password = $("#pwd").val()
-      if (userId === "") {
-        $("#id-error").show()
-      } else if (password === "") {
+
+      // 인풋 에러 초기화
+      $("#id-error").addClass("hidden")
+      $("#pwd-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+      let valid = true
+      if (!userId) {
+        $("#id-error").removeClass("hidden")
+        valid = false
       }
+      if (!password) {
+        $("#pwd-error").removeClass("hidden")
+        valid = false
+      }
+      if (!valid) return
 
       $.ajax({
         type: "POST",
         url: "/login",
         contentType: "application/json",
-        data: JSON.stringify({
-          id: userId,
-          pwd: password,
-        }),
+        data: JSON.stringify({ id: userId, pwd: password }),
         success: function (response) {
           closeLogin()
           window.location.reload()
+        },
+        error: function (xhr) {
+          const msg =
+            xhr.responseJSON?.message || "아이디 또는 비밀번호를 확인해주세요."
+          $("#login-error").text(msg).removeClass("hidden")
         },
       })
     })
@@ -149,18 +190,14 @@
       $.ajax({
         type: "POST",
         url: "/logout",
-        xhrFields: {
-          withCredentials: true,
-        },
-        headers: {
-          "X-CSRF-TOKEN": csrf,
-        },
+        xhrFields: { withCredentials: true },
+        headers: { "X-CSRF-TOKEN": csrf },
         success: function (response) {
           if (response.result === "success") {
             window.location.reload()
           }
         },
-        error: function (xhr) {
+        error: function () {
           alert("로그아웃 처리 중 문제가 발생했습니다.")
         },
       })

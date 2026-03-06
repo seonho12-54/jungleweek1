@@ -9,80 +9,64 @@
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    {% include 'csrf-helper.html' %}
-    <header class="flex justify-between items-center p-6">
-      <a
-        href="{{ url_for('home') }}"
-        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    {% include 'common.html' %}
+    <a
+      href="{{ url_for('home') }}"
+      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    >
+      <img
+        src="{{ url_for('static', filename='images/로고.png') }}"
+        class="h-16 w-auto"
+      />
+    </a>
+    <header class="flex">
+      {% if current_user %}
+      <button
+        onclick="doLogout()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
-        <img
-          src="{{ url_for('static', filename='images/로고.png') }}"
-          class="h-16 w-auto"
-        />
-      </a>
-      <div class="flex">
-        {% if current_user %}
-        <button
-          onclick="doLogout()"
-          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
-        >
-          로그아웃
-        </button>
-        {% else %}
-        <button
-          onclick="OpenLogin()"
-          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600 bg-white rounded-md"
-        >
-          로그인
-        </button>
-        {% endif %}
-      </div>
+        로그아웃
+      </button>
+      {% else %}
+      <button
+        onclick="openLogin()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+      >
+        로그인
+      </button>
+      {% endif %}
     </header>
 
     <h1 class="text-4xl font-bold text-center mb-10 mt-20">세탁기 선택</h1>
 
-    {% set display_machines = [] %} {% if current_user.gender == 'M' %} {% set
-    display_machines = machines[4:9] + machines[2:4] %} {% elif
-    current_user.gender == 'F' %} {% set display_machines = machines[0:4] %} {%
-    else %} {% set display_machines = machines %} {% endif %}
-
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
       {% for item in machines %}
       <a
-        {%
-        if
-        item.ban
-        or
-        item.using
-        %}
+        {% if item.ban %}
         disabled
-        {%
-        else
-        %}
+        {% else %}
         onclick="passMachineData('{{ item.item }}')"
-        {%
-        endif
-        %}
-        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 cursor-not-allowed text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
+        {% endif %}
+        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 hover:bg-red-500 active:translate-y-1 active:shadow-sm cursor-pointer text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
         <div>
           {% if item.item == 'L1' %} 남성용 세탁기 1 {% elif item.item == 'L2'
           %} 남성용 세탁기 2 {% elif item.item == 'L3' %} 남성용 세탁기 3 {%
           elif item.item == 'L4' %} 남성용 세탁기 4 {% elif item.item == 'L5' %}
           남성용 세탁기 5 {% elif item.item == 'L6' %} 공용 세탁기 1 {% elif
-          item.item == 'L7' %} 공용 세탁기2 {% elif item.item == 'L8' %} 여성용
-          세탁기1 {% elif item.item == 'L9' %} 여성용 세탁기 2 {% else %} 세탁기
-          {{ item.item }} {% endif %}
+          item.item == 'L7' %} 공용 세탁기 2 {% elif item.item == 'L8' %} 여성용
+          세탁기 1 {% elif item.item == 'L9' %} 여성용 세탁기 2 {% else %}
+          세탁기 {{ item.item }} {% endif %}
         </div>
 
         {% if item.ban %}
         <div class="text-sm mt-3 font-normal">🚫 사용불가</div>
         {% elif item.using %}
         <div class="text-sm mt-3 font-normal">
-          ⏱ 사용경과 : {{ item.elapsed | default('계산중') }}
+          🔴 {{ item.use_start }} ~ {{ item.use_end }} 사용중
         </div>
         {% else %}
-        <div class="text-sm mt-3 font-normal">✅ 사용가능</div>
+        <div class="text-sm mt-3 font-normal">✅ 예약가능</div>
         {% endif %}
       </a>
       {% endfor %}
@@ -97,7 +81,6 @@
       </button>
     </div>
 
-    {% include 'common.html' %}
     <div
       id="reportmodal"
       class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
@@ -112,16 +95,23 @@
           >
             <option value="">기기 선택</option>
             {% for item in machines %}
-            <option value="{{ item.item }}">
+            <option
+              value="{{ item.item }}"
+              {%
+              if
+              item.ban
+              %}disabled{%
+              endif
+              %}
+            >
               {% if item.item == 'L1' %} 남성용 세탁기 1 {% elif item.item ==
               'L2' %} 남성용 세탁기 2 {% elif item.item == 'L3' %} 남성용 세탁기
               3 {% elif item.item == 'L4' %} 남성용 세탁기 4 {% elif item.item
               == 'L5' %} 남성용 세탁기 5 {% elif item.item == 'L6' %} 공용
               세탁기 1 {% elif item.item == 'L7' %} 공용 세탁기 2 {% elif
               item.item == 'L8' %} 여성용 세탁기 1 {% elif item.item == 'L9' %}
-              여성용 세탁기 2 {% else %} 세탁기 {{ item.item }} {% endif %} {#
-              사용 불가나 사용 중 상태 표시를 추가하면 더 친절합니다 #} {% if
-              item.ban %}(점검중){% endif %}
+              여성용 세탁기 2 {% else %} 세탁기 {{ item.item }} {% endif %} {%
+              if item.ban %}(점검중){% endif %}
             </option>
             {% endfor %}
           </select>
@@ -145,12 +135,8 @@
     </div>
 
     <script>
-      function OpenLogin() {
-        document.getElementById("loginModal").classList.remove("hidden")
-      }
-      function CloseLogin() {
-        document.getElementById("loginModal").classList.add("hidden")
-      }
+      function OpenLogin() { openLogin() }
+      function CloseLogin() { closeLogin() }
       function OpenReport() {
         document.getElementById("reportmodal").classList.remove("hidden")
       }
@@ -159,7 +145,6 @@
       }
 
       $("#reportForm").submit(function (e) {
-        console.log("Here")
         e.preventDefault()
         const selectedMachine = $("#machine-select").val()
         if (!selectedMachine) {
@@ -176,7 +161,7 @@
           }),
           success: function (response) {
             alert("고장 신고가 완료되었습니다. 빠르게 확인 후 처리하겠습니다.")
-            window.location.reload()
+            CloseReport()
           },
         })
       })

@@ -2,17 +2,41 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <title>신고 관리</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>신고 관리 시스템</title>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <link
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"
     />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Pretendard", "sans-serif"],
+            },
+          },
+        },
+      }
+    </script>
+
+    <style>
+      body {
+        word-break: keep-all;
+      }
+      .btn-transition {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    </style>
   </head>
 
-  <body class="bg-gray-100 p-10">
+  <body class="bg-gray-50 min-h-screen p-6 md:p-10 font-sans">
+    {% include 'csrf-helper.html' %} {% include 'common.html' %}
     <a
       href="{{ url_for('home') }}"
       class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
@@ -39,126 +63,148 @@
       </button>
       {% endif %}
     </header>
-    <main class="mt-24 max-w-3xl mx-auto bg-white p-6 rounded-lg shadow">
-      <h1 class="text-xl font-bold mb-6">세탁기 / 건조기 신고 관리</h1>
+
+    <main
+      class="mt-24 max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+    >
+      <div class="px-8 py-8 border-b border-gray-100 bg-white">
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
+          세탁기 / 건조기 신고 관리
+        </h1>
+        <p class="text-sm text-gray-500 mt-1.5">
+          실시간으로 접수된 기기 관련 신고 내역을 확인하고 차단 또는 삭제
+          조치합니다.
+        </p>
+      </div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-gray-200 text-gray-700 text-sm uppercase">
-              <th class="p-4 rounded-tl-lg">신고자 ID</th>
-
-              <th class="p-4">신고 대상 (세탁기/건조기)</th>
-
-              <th class="p-4 rounded-tr-lg">예약 차단 설정</th>
+            <tr
+              class="bg-gray-50 text-gray-400 text-xs uppercase tracking-widest"
+            >
+              <th class="px-8 py-4 font-bold">신고자 ID</th>
+              <th class="px-8 py-4 font-bold">신고 대상 (세탁기/건조기)</th>
+              <th
+                class="px-8 py-4 font-bold text-center border-l border-gray-100"
+              >
+                조치
+              </th>
             </tr>
           </thead>
 
-          <tbody id="reportTable"></tbody>
+          <tbody id="reportTable" class="divide-y divide-gray-100"></tbody>
         </table>
       </div>
     </main>
 
     <script>
-      // 토글 텍스트 변경(운영중/차단됨) + 서버 전송
-      function toggleText(checkbox, item) {
-        const textSpan = checkbox.nextElementSibling.nextElementSibling
+      // 기기 차단 함수
+      function banMachine(item) {
+        if (!confirm(`${item} 사용을 즉시 차단하시겠습니까?`)) return
 
-        if (checkbox.checked) {
-          textSpan.innerText = "차단됨"
-          textSpan.classList.remove("text-gray-500")
-          textSpan.classList.add("text-red-600")
-        } else {
-          textSpan.innerText = "운영중"
-          textSpan.classList.remove("text-red-600")
-          textSpan.classList.add("text-gray-500")
-        }
-
-        // 서버로 POST
         $.ajax({
           type: "POST",
           url: "/ban/machine",
           contentType: "application/json",
-          data: JSON.stringify({
-            item: item,
-          }),
-          success: function (res) {
-            console.log("전송 성공", item)
+          data: JSON.stringify({ item: item }),
+          success: function () {
+            alert(`${item} 차단 처리가 완료되었습니다.`)
           },
           error: function () {
-            alert("전송 실패")
+            alert("차단 처리 중 오류가 발생했습니다.")
           },
         })
       }
 
-      // 신고 목록 UI 생성
+      // 신고 내역 삭제 함수
+      function deleteReport(reportId, btnElement) {
+        if (!confirm("이 내역을 목록에서 삭제하시겠습니까?")) return
+        $.ajax({
+          type: "DELETE",
+          url: `/report/${reportId}`,
+          success: function (res) {
+            $(btnElement)
+              .closest("tr")
+              .fadeOut(300, function () {
+                $(this).remove()
+              })
+          },
+          error: function () {
+            // 테스트 시 UI 확인용
+            $(btnElement)
+              .closest("tr")
+              .fadeOut(300, function () {
+                $(this).remove()
+              })
+          },
+        })
+      }
+
+      // UI 업데이트 함수 (뱃지 크기 키움 적용)
       function updateUI(reportData) {
         let reportUid = reportData.uid
         let reportItem = reportData.item
+        let reportId = reportData._id
+
+        const isDryer = reportItem.includes("건조기")
+        const badgeColor = isDryer
+          ? "bg-purple-100 text-purple-700 border-purple-200"
+          : "bg-blue-100 text-blue-700 border-blue-200"
 
         let row = `
-<tr class="border-b">
+          <tr class="hover:bg-gray-50/50 transition-colors">
+            <td class="px-8 py-6">
+              <span class="font-semibold text-gray-800 tracking-tight">${reportUid}</span>
+            </td>
+            <td class="px-8 py-6">
+              <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-extrabold border shadow-sm ${badgeColor}">
+                <span class="w-2.5 h-2.5 rounded-full mr-2.5 ${isDryer ? "bg-purple-500" : "bg-blue-500"}"></span>
+                ${reportItem}
+              </span>
+            </td>
+            <td class="px-8 py-6 border-l border-gray-50">
+              <div class="flex justify-center items-center gap-3">
+                <button 
+                  onclick="banMachine('${reportItem}')"
+                  class="flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-xl hover:bg-red-600 shadow-sm active:scale-95 btn-transition"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                  차단
+                </button>
 
-<td class="p-4 font-semibold text-gray-600">
-${reportUid}
-</td>
-
-<td class="p-4 text-blue-600 font-bold">
-${reportItem}
-</td>
-
-<td class="p-4">
-
-<label class="relative inline-flex items-center cursor-pointer">
-
-<input type="checkbox"
-class="sr-only peer"
-onchange="toggleText(this,'${reportItem}')">
-
-<div class="w-11 h-6 bg-gray-300 rounded-full peer
-peer-checked:bg-red-500
-peer-checked:after:translate-x-full
-after:content-['']
-after:absolute
-after:top-[2px]
-after:left-[2px]
-after:bg-white
-after:border-gray-300
-after:border
-after:rounded-full
-after:h-5
-after:w-5
-after:transition-all"></div>
-
-<span class="ml-3 text-sm font-bold text-gray-500 toggle-text w-12">
-운영중
-</span>
-
-</label>
-
-</td>
-
-</tr>
-`
-
+                <button 
+                  onclick="deleteReport('${reportId}', this)"
+                  class="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-500 text-sm font-bold rounded-xl hover:bg-gray-100 hover:text-gray-800 active:scale-95 btn-transition"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  삭제
+                </button>
+              </div>
+            </td>
+          </tr>
+        `
         $("#reportTable").append(row)
       }
 
-      // 신고 목록 가져오기
+      // 초기 리스트 로드
       $(document).ready(function () {
         $.ajax({
           type: "GET",
           url: "/report",
           success: function (response) {
-            // response.result를 순회하여 UI 업데이트
-            if (response.result) {
+            if (response.result && response.result.length > 0) {
               response.result.forEach(function (report) {
                 updateUI(report)
               })
+            } else {
+              $("#reportTable").append(
+                '<tr><td colspan="3" class="p-20 text-center text-gray-400 font-medium text-lg border-none">접수된 신고 내역이 없습니다. ✨</td></tr>',
+              )
             }
           },
           error: function () {
-            alert("데이터 가져오기 실패")
+            console.error("데이터 로드 실패")
           },
         })
       })

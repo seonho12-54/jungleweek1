@@ -24,20 +24,20 @@
   </head>
 
   <body>
-    <header class="flex justify-between items-center p-6">
-      <a
-        href="{{ url_for('home') }}"
-        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
-      >
-        <img
-          src="{{ url_for('static', filename='images/로고.png') }}"
-          class="h-16 w-auto"
-          alt="로고"
-        />
-      </a>
-
+    {% include 'common.html' %}
+    <a
+      href="{{ url_for('home') }}"
+      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    >
+      <img
+        src="{{ url_for('static', filename='images/로고.png') }}"
+        class="h-16 w-auto"
+        alt="로고"
+      />
+    </a>
+    <header class="flex">
       <button
-        onclick="OpenLogin()"
+        onclick="openLogin()"
         class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
         로그인
@@ -80,13 +80,9 @@
                   중복 확인
                 </button>
               </div>
+              <p id="id-check-msg" class="mt-1 text-sm pl-1 hidden"></p>
             </div>
-            <!-- <p
-              class="mt-2 text-sm text-pink-600 invisible invalid:visible"
-              id="-error"
-            >
-              Please enter a valid email address.
-            </p> -->
+
             <div>
               <label class="text-slate-900 text-sm font-medium mb-2 block"
                 >비밀번호</label
@@ -99,6 +95,7 @@
                 placeholder="비밀번호를 입력하세요"
               />
             </div>
+
             <div>
               <label class="text-slate-900 text-sm font-medium mb-2 block"
                 >비밀번호 확인</label
@@ -110,6 +107,7 @@
                 class="text-slate-900 bg-white border border-gray-300 w-full text-sm px-4 py-3 rounded-md outline-blue-500"
                 placeholder="비밀번호를 한번 더 입력하세요"
               />
+              <p id="pw-match-msg" class="mt-1 text-sm pl-1 hidden"></p>
             </div>
           </div>
 
@@ -143,6 +141,7 @@
               >
             </div>
           </div>
+          <p id="gender-msg" class="mt-1 text-sm text-red-500 hidden"></p>
 
           <div class="mt-12">
             <button
@@ -152,11 +151,16 @@
               계정 생성
             </button>
           </div>
+          <p
+            id="signup-error-msg"
+            class="mt-3 text-sm text-red-500 text-center hidden"
+          ></p>
+
           <p class="text-slate-600 text-sm mt-6 text-center">
             계정이 이미 있으신가요?
             <a
               href="javascript:void(0)"
-              onclick="OpenLogin()"
+              onclick="openLogin()"
               class="text-blue-600 font-medium hover:underline ml-1"
               >로그인</a
             >
@@ -165,14 +169,38 @@
       </div>
     </div>
 
-    {% include 'common.html' %}
-
     <script>
-      // id 중복확인 (버튼 클릭 이벤트로 수정)
-      $("#id-same-check-btn").click(function (e) {
+      function showMsg(id, msg, isError) {
+        const el = document.getElementById(id)
+        el.textContent = msg
+        el.className =
+          "mt-1 text-sm pl-1 " + (isError ? "text-red-500" : "text-green-600")
+        el.classList.remove("hidden")
+      }
+
+      function hideMsg(id) {
+        document.getElementById(id).classList.add("hidden")
+      }
+
+      // 입력 시작하면 해당 에러 메시지 숨기기
+      $("#signupId").on("input", function () {
+        hideMsg("id-check-msg")
+      })
+      $("#signupPw").on("input", function () {
+        hideMsg("pw-match-msg")
+        hideMsg("pw-empty-msg")
+      })
+      $("#signupPwc").on("input", function () {
+        hideMsg("pw-match-msg")
+      })
+      $('input[name="gender"]').on("change", function () {
+        hideMsg("gender-msg")
+      })
+
+      $("#id-same-check-btn").click(function () {
         const userId = $("#signupId").val()
         if (!userId) {
-          alert("아이디를 입력해주세요")
+          showMsg("id-check-msg", "아이디를 입력해주세요.", true)
           return
         }
 
@@ -180,21 +208,16 @@
           type: "POST",
           url: "/user/check-id",
           contentType: "application/json",
-          data: JSON.stringify({
-            id: userId,
-          }),
+          data: JSON.stringify({ id: userId }),
           success: function (response) {
-            alert(response.message)
+            showMsg("id-check-msg", response.message, false)
           },
           error: function (xhr) {
-            if (xhr.status === 409) {
-              alert("id가 이미 존재합니다.")
-            }
+            showMsg("id-check-msg", "이미 존재하는 아이디입니다.", true)
           },
         })
       })
 
-      //회원정보 ajax
       $("#imfoma").submit(function (e) {
         e.preventDefault()
 
@@ -202,14 +225,33 @@
         const userPw = $("#signupPw").val()
         const userPwc = $("#signupPwc").val()
         const userGender = $('input[name="gender"]:checked').val()
-
         const userName = "사용자"
-        if (userId === "") {
+
+        let valid = true
+
+        if (!userId) {
+          showMsg("id-check-msg", "아이디를 입력해주세요.", true)
+          valid = false
         }
-        if (userPw !== userPwc) {
-          alert("비밀번호가 서로 일치하지 않습니다!")
-          return
+
+        if (!userPw) {
+          showMsg("pw-match-msg", "비밀번호를 입력해주세요.", true)
+          valid = false
+        } else if (userPw !== userPwc) {
+          showMsg("pw-match-msg", "비밀번호가 서로 일치하지 않습니다.", true)
+          valid = false
+        } else {
+          hideMsg("pw-match-msg")
         }
+
+        if (!userGender) {
+          showMsg("gender-msg", "성별을 선택해주세요.", true)
+          valid = false
+        } else {
+          hideMsg("gender-msg")
+        }
+
+        if (!valid) return
 
         $.ajax({
           type: "POST",
@@ -223,22 +265,23 @@
           }),
           success: function (response) {
             alert("회원가입이 완료되었습니다!")
-            window.location.href = "/" // 메인으로 이동
+            window.location.href = "/"
           },
           error: function (xhr) {
-            alert("회원가입에 실패했습니다.")
+            showMsg(
+              "signup-error-msg",
+              "회원가입에 실패했습니다. 다시 시도해주세요.",
+              true,
+            )
           },
         })
       })
 
       function OpenLogin() {
-        // common.html에 있는 모달의 실제 ID를 확인해야 합니다.
-        const modal = document.getElementById("loginModal")
-        if (modal) modal.classList.remove("hidden")
+        openLogin()
       }
       function CloseLogin() {
-        const modal = document.getElementById("loginModal")
-        if (modal) modal.classList.add("hidden")
+        closeLogin()
       }
     </script>
   </body>

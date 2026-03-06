@@ -25,6 +25,7 @@
   </head>
 
   <body class="h-screen bg-gray-100 flex flex-col items-center justify-center">
+    {% include 'common.html' %}
     <a
       href="{{ url_for('home') }}"
       class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
@@ -82,59 +83,61 @@
       </a>
     </div>
 
-    {% include 'common.html' %}
-
     <!--나의 예약정보를 가져오고 세탁기누르면 세탁 정보 건조기 누르면 건조기정보 아이디와 예약시간을 넣는다-->
     {% if user_info %}
 
-    <div
-      class="w-full max-w-4xl h-24 bg-gray-300 rounded-xl shadow-lg flex items-center p-4 gap-4 mt-6"
-    >
-      <button
-        onclick="showMyWasher()"
-        class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition"
-      >
-        <img
-          src="{{ url_for('static', filename='images/세탁기.png') }}"
-          class="h-8 w-8"
-          alt="세탁기"
-        />
-      </button>
-
-      <button
-        onclick="showMyDryer()"
-        class="w-12 h-12 bg-white rounded-lg shadow hover:bg-gray-100 flex items-center justify-center transition"
-      >
-        <img
-          src="{{ url_for('static', filename='images/건조기.png') }}"
-          class="h-8 w-8"
-          alt="건조기"
-        />
-      </button>
+    <div class="w-11/12 md:w-2/3 mt-6">
+      <!-- 제목 -->
+      <div class="text-gray-700 font-semibold mb-2">내 예약 확인</div>
 
       <div
-        class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3"
+        class="h-24 bg-gray-300 rounded-2xl shadow-lg flex items-center p-4 gap-4"
       >
-        <img
-          src="{{ url_for('static', filename='images/사용자.png') }}"
-          class="h-6 w-6 opacity-60"
-        />
-        <span id="display-id" class="text-gray-600 font-medium"></span>
-      </div>
+        <button
+          onclick="showMyWasher()"
+          class="flex items-center gap-2 px-3 h-12 bg-white rounded-lg shadow hover:bg-gray-100 transition"
+        >
+          <img
+            src="{{ url_for('static', filename='images/세탁기.png') }}"
+            class="h-6 w-6"
+          />
+          <span class="text-sm font-medium">세탁기</span>
+        </button>
 
-      <div
-        class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3"
-      >
-        <img
-          src="{{ url_for('static', filename='images/예약시간.png') }}"
-          class="h-6 w-6 opacity-60"
-        />
-        <span id="display-time" class="text-gray-600 font-medium">--:--</span>
+        <button
+          onclick="showMyDryer()"
+          class="flex items-center gap-2 px-3 h-12 bg-white rounded-lg shadow hover:bg-gray-100 transition"
+        >
+          <img
+            src="{{ url_for('static', filename='images/건조기.png') }}"
+            class="h-6 w-6"
+          />
+          <span class="text-sm font-medium">건조기</span>
+        </button>
+
+        <div
+          class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3"
+        >
+          <img
+            src="{{ url_for('static', filename='images/사용자.png') }}"
+            class="h-6 w-6 opacity-60"
+          />
+          <span id="display-id" class="text-gray-600 font-medium"></span>
+        </div>
+
+        <div
+          class="flex-1 h-12 bg-white rounded-xl shadow-inner flex items-center px-4 gap-3"
+        >
+          <img
+            src="{{ url_for('static', filename='images/예약시간.png') }}"
+            class="h-6 w-6 opacity-60"
+          />
+          <span id="display-time" class="text-gray-600 font-medium">--:--</span>
+        </div>
       </div>
     </div>
 
     {% endif %}
-
     <script>
       // 정보를 화면에 업데이트하는 공통 함수 (기존과 동일)
       function updateInfo(name, time) {

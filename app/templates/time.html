@@ -24,8 +24,8 @@
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    {% include 'ajax-setup.html' %} {% include 'csrf-helper.html' %}
-    <!-- <div id="machine-type">{{ machine_type }}</div> -->
+    {% include 'common.html' %} {% include 'ajax-setup.html' %} {% include
+    'csrf-helper.html' %}
     <a
       href="{{ url_for('home') }}"
       class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
@@ -161,6 +161,7 @@
         </button>
       </div>
     </div>
+
     <script id="reserves-data" type="application/json">
       {{ reserves | tojson }}
     </script>
@@ -175,13 +176,6 @@
       const PM_END = { h: 23, m: 50 }
 
       const days = ["월", "화", "수", "목", "금", "토", "일"]
-      let dayIndex = 0
-
-      const ampmByDay = Array(7).fill("AM")
-      const reservations = []
-
-      let selectedStartSec = null
-      let selectedEndSec = null
 
       const now = new Date()
       const jsDay = now.getDay()
@@ -189,6 +183,29 @@
       const monday = new Date(now)
       monday.setDate(now.getDate() + diffToMon)
       monday.setHours(0, 0, 0, 0)
+
+      // ✅ 오늘 요일로 dayIndex 초기화 (월=0 ~ 일=6)
+      let dayIndex = jsDay === 0 ? 6 : jsDay - 1
+
+      const ampmByDay = Array(7).fill("AM")
+      const reservations = []
+
+      let selectedStartSec = null
+      let selectedEndSec = null
+
+      // ✅ URL에서 item 파라미터 읽기
+      const params = new URLSearchParams(window.location.search)
+      const currentItem = params.get("item") || ""
+
+      // ✅ 페이지 타이틀 설정
+      if (currentItem) {
+        const type = currentItem[0]
+        const num = currentItem.slice(1)
+        let name = ""
+        if (type === "L") name = "세탁기"
+        else if (type === "D") name = "건조기"
+        document.getElementById("pageTitle").innerText = name + " " + num
+      }
 
       function OpenLogin() {
         document.getElementById("loginModal").classList.remove("hidden")
@@ -376,54 +393,40 @@
           .reverse()
           .forEach((r) => {
             const box = document.createElement("div")
-            box.className =
-              "border border-neutral-200 rounded p-3 bg-neutral-50 flex items-start justify-between gap-3"
+            box.className = r.own
+              ? "border border-green-300 rounded p-3 bg-green-50 flex items-start justify-between gap-3"
+              : "border border-neutral-200 rounded p-3 bg-neutral-50 flex items-start justify-between gap-3"
 
             const left = document.createElement("div")
             left.className = "text-sm text-neutral-800"
             left.innerHTML = `
-          <div class="font-semibold">${r.dateStr} (${days[r.dayIndex]})</div>
-          <div class="text-neutral-700">${fmtHM(r.startSec)} ~ ${fmtHM(r.endSec)}</div>
-        `
-
-            const del = document.createElement("button")
-            del.className =
-              "text-xs px-2 py-1 border border-neutral-300 rounded hover:bg-white"
-            del.textContent = "삭제"
-
-            const pk = r._id
-            del.disabled = !pk || !r.own
-
-            del.addEventListener("click", () => {
-              if (!pk || !r.own) return
-              deleteReservationsData(pk)
-            })
+              <div class="font-semibold">${r.dateStr} (${days[r.dayIndex]})</div>
+              <div class="text-neutral-600">${fmtHM(r.startSec)} ~ ${fmtHM(r.endSec)}</div>
+              ${r.own ? '<div class="text-xs text-green-600 mt-1">내 예약</div>' : '<div class="text-xs text-neutral-400 mt-1">다른 사람 예약</div>'}
+            `
 
             box.appendChild(left)
-            box.appendChild(del)
+
+            // 내 예약일 때만 삭제 버튼 표시
+            if (r.own) {
+              const del = document.createElement("button")
+              del.className =
+                "text-xs px-2 py-1 border border-neutral-300 rounded hover:bg-white shrink-0"
+              del.textContent = "삭제"
+              del.disabled = !r._id
+
+              del.addEventListener("click", () => {
+                if (!r._id) return
+                if (!confirm("예약을 삭제하시겠습니까?")) return
+                deleteReservationsData(r._id)
+              })
+
+              box.appendChild(del)
+            }
+
             list.appendChild(box)
           })
       }
-
-      // function loadMachineData() {
-      //   const params = new URLSearchParams(window.location.search)
-      //   const item = params.get("item") || ""
-      //   console.log(item)
-      //   if (!item || item.length < 2) return
-
-      //   machineData = { item }
-
-      //   const type = item[0]
-      //   const num = item.slice(1)
-
-      //   let name = ""
-      //   if (type === "L") name = "세탁기"
-      //   else if (type === "D") name = "건조기"
-
-      //   document.getElementById("pageTitle").innerText = name + num
-
-      //   loadReservationsData()
-      // }
 
       function parseDateTime(str) {
         if (!str) return null
@@ -525,10 +528,12 @@
 
           if (pick.durSec > MAX_SELECT_SEC) return
           if (!isRangeSelectable(dayIndex, pick.startSec, pick.endSec)) return
-          const machineType = $("machine-type")
-          console.log(machineType)
-          if (!machineType) return
-          console.log("테스트")
+
+          if (!currentItem) {
+            alert("기기 정보를 찾을 수 없습니다.")
+            return
+          }
+
           const period = document.getElementById("ampm").value
 
           const saveData = [
@@ -536,25 +541,15 @@
               start: makeDateTime(dayIndex, pick.startSec),
               end: makeDateTime(dayIndex, pick.endSec),
               period: period,
-              item: machineType.item,
+              item: currentItem,
             },
           ]
 
-          reservations.push({
-            dayIndex,
-            dateStr: dateStrForDayIndex(dayIndex),
-            startSec: pick.startSec,
-            endSec: pick.endSec,
-            period: period,
-            item: machineType.item,
-            own: true,
-          })
-
-          saveReservationsData(saveData)
-
+          // 선택 초기화만 하고, 화면 반영은 서버 응답 후에만 함
           resetPick()
-          renderReservations()
           renderGrid()
+
+          saveReservationsData(saveData, pick, period)
         })
       }
 
@@ -590,72 +585,44 @@
         return false
       }
 
-      function loadReservationsData() {
-        const item = machineData?.item
-        if (!item) return
-        console.log(item)
-        $.ajax({
-          type: "GET",
-          url: "/reserve",
-          dataType: "json",
-          headers: { "X-CSRF-TOKEN": csrf },
-          data: { item: item },
-          success: function (resp) {
-            const list = resp?.result || []
-            reservations.length = 0
-            ;(list || []).forEach((r) => {
-              const ds = parseDateTime(r.start)
-              const de = parseDateTime(r.end)
-              if (!ds || !de) return
-
-              const di = dayIndexFromDate(ds)
-              if (di < 0 || di > 6) return
-
-              reservations.push({
-                dayIndex: di,
-                dateStr: dateStrForDayIndex(di),
-                startSec: secOfDayFromDate(ds),
-                endSec: secOfDayFromDate(de),
-                period: r.period,
-                item: r.item,
-                id: r.id,
-                own: !!r.own,
-                _id: r._id,
-              })
-            })
-
-            renderReservations()
-            renderGrid()
-          },
-          error: function (xhr) {
-            errorMessage = xhr.responseJSON
-            alert(errorMessage.message)
-            dbResult(xhr.responseJSON)
-          },
-        })
-      }
-
-      function saveReservationsData(saveData) {
-        const machineType = "{{ machine_type }}"
-
-        saveData[0]["item"] = machineType
-        console.log(saveData)
+      function saveReservationsData(saveData, pick, period) {
         $.ajax({
           type: "POST",
           url: "/reserve",
           dataType: "json",
           contentType: "application/json; charset=utf-8",
+          headers: {
+            "X-CSRF-TOKEN": csrf,
+            "X-Requested-With": "XMLHttpRequest",
+          },
           data: JSON.stringify(saveData),
           success: function (resp) {
-            if (dbResult(resp)) return
-            loadReservationsData()
+            reservations.push({
+              dayIndex: dayIndex,
+              dateStr: dateStrForDayIndex(dayIndex),
+              startSec: pick.startSec,
+              endSec: pick.endSec,
+              period: period,
+              item: currentItem,
+              own: true,
+              _id: null,
+            })
+            renderReservations()
+            renderGrid()
+            fetchAndRefresh()
+            alert("예약이 완료되었습니다.")
           },
           error: function (xhr) {
-            errorMessage = xhr.responseJSON
-
-            alert(errorMessage.info.description)
-            dbResult(xhr.responseJSON)
-            // renderGrid()
+            const errorData = xhr.responseJSON
+            if (errorData && errorData.info && errorData.info.description) {
+              alert(errorData.info.description)
+            } else if (errorData && errorData.message) {
+              alert(errorData.message)
+            } else {
+              alert("예약 중 오류가 발생했습니다.")
+            }
+            // 실패 시 화면에 아무것도 추가하지 않았으므로 그냥 그리드만 다시 그림
+            renderGrid()
             renderReservations()
           },
         })
@@ -668,23 +635,65 @@
           type: "DELETE",
           url: `/reserve/${encodeURIComponent(pk)}`,
           dataType: "json",
-          headers: { "X-CSRF-TOKEN": csrf },
+          headers: {
+            "X-CSRF-TOKEN": csrf,
+            "X-Requested-With": "XMLHttpRequest",
+          },
           success: function (resp) {
-            if (dbResult(resp)) return
-            loadReservationsData()
+            fetchAndRefresh()
           },
           error: function (xhr) {
-            dbResult(xhr.responseJSON)
+            alert("삭제 중 오류가 발생했습니다.")
           },
         })
       }
 
+      // 서버에서 최신 예약 데이터를 AJAX로 가져와서 화면 갱신
+      function fetchAndRefresh() {
+        $.ajax({
+          type: "GET",
+          url: "/reserve",
+          dataType: "json",
+          headers: {
+            "X-CSRF-TOKEN": csrf,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          data: { item: currentItem },
+          success: function (resp) {
+            const list = resp?.result || []
+            reservations.length = 0
+            list.forEach((r) => {
+              const ds = parseDateTime(r.start)
+              const de = parseDateTime(r.end)
+              if (!ds || !de) return
+              const di = dayIndexFromDate(ds)
+              if (di < 0 || di > 6) return
+              reservations.push({
+                dayIndex: di,
+                dateStr: dateStrForDayIndex(di),
+                startSec: secOfDayFromDate(ds),
+                endSec: secOfDayFromDate(de),
+                period: r.period,
+                item: r.item,
+                id: r.id,
+                own: !!r.own,
+                _id: r._id,
+              })
+            })
+            renderReservations()
+            renderGrid()
+          },
+          error: function () {
+            // alert 없이 조용히 실패 (이미 로컬 데이터로 화면은 표시 중)
+          },
+        })
+      }
+
+      // 초기 로드: 서버에서 렌더링된 데이터로 파싱
       function loadServerReservations() {
         const serverReserves = JSON.parse(
           document.getElementById("reserves-data").textContent,
         )
-
-        console.log("📦 서버에서 받은 reserves:", serverReserves)
 
         reservations.length = 0
 
@@ -692,17 +701,13 @@
           const ds = parseDateTime(r.start)
           const de = parseDateTime(r.end)
 
-          console.log("🔎 파싱된 날짜:", ds, de)
-
           if (!ds || !de) return
 
           const di = dayIndexFromDate(ds)
 
-          console.log("📅 계산된 dayIndex:", di)
-
           if (di < 0 || di > 6) return
 
-          const obj = {
+          reservations.push({
             dayIndex: di,
             dateStr: dateStrForDayIndex(di),
             startSec: secOfDayFromDate(ds),
@@ -712,29 +717,9 @@
             id: r.id,
             own: !!r.own,
             _id: r._id,
-          }
-
-          console.log("✅ reservations에 push:", obj)
-
-          reservations.push(obj)
+          })
         })
-
-        console.log("📊 최종 reservations 배열:", reservations)
       }
-      // function displayTimeGrid() {
-      //   const serverReserves = JSON.parse(
-      //     document.getElementById("reserves-data").textContent,
-      //   )
-      //   console.log(serverReserves)
-      //   // #timeGrid 안에 있는 모든 button을 찾아서 텍스트만 뽑아 배열로 만듭니다.
-      //   const times = $("#timeGrid button")
-      //     .map(function () {
-      //       return $(this).text()
-      //     })
-      //     .get()
-
-      //   console.log("현재 화면의 시간들:", times)
-      // }
 
       updateDayLabels()
       document.getElementById("ampm").value = ampmByDay[dayIndex]
