@@ -5,154 +5,181 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>누가돌려?</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    <!-- 상단 네비 -->
-    <header class="flex justify-between items-center p-6">
-      <a
-        href="{{ url_for('home') }}"
-        class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    {% include 'csrf-helper.html' %} {% include 'common.html' %}
+    <a
+      href="{{ url_for('home') }}"
+      class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
+    >
+      <img
+        src="{{ url_for('static', filename='images/로고.png') }}"
+        class="h-16 w-auto"
+      />
+    </a>
+    <header class="flex">
+      {% if current_user %}
+      <button
+        onclick="doLogout()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
       >
-        <img
-          src="{{ url_for('static', filename='images/로고.png') }}"
-          class="h-16 w-auto"
-        />
-      </a>
-      <header class="flex">
-        <button
-          onclick="OpenLogin()"
-          class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
-        >
-          로그인
-        </button>
-      </header>
+        로그아웃
+      </button>
+      {% else %}
+      <button
+        onclick="openLogin()"
+        class="absolute top-5 right-5 px-6 py-2 border border-blue-500 text-blue-600"
+      >
+        로그인
+      </button>
+      {% endif %}
     </header>
 
-    <!-- 타이틀 -->
-    <h1 class="text-4xl font-bold text-center mb-10">세탁기</h1>
+    <h1 class="text-4xl font-bold text-center mb-10 mt-20">세탁기 선택</h1>
 
-    <!-- 카드 영역 -->
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
-      <!-- 대기중 카드 -->
-      <button
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
+      {% for item in machines %}
+      <a
+        {%
+        if
+        item.ban
+        %}
+        disabled
+        {%
+        else
+        %}
+        onclick="passMachineData('{{ item.item }}')"
+        {%
+        endif
+        %}
+        class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 hover:bg-red-500 active:translate-y-1 active:shadow-sm cursor-pointer text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
-        🫧 남성용 세탁기 1
-      </button>
-      <button
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 2
-      </button>
-      <button
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 3
-      </button>
+        <div>
+          {% if item.item == 'L1' %} 남성용 세탁기 1 {% elif item.item == 'L2'
+          %} 남성용 세탁기 2 {% elif item.item == 'L3' %} 남성용 세탁기 3 {%
+          elif item.item == 'L4' %} 남성용 세탁기 4 {% elif item.item == 'L5' %}
+          남성용 세탁기 5 {% elif item.item == 'L6' %} 공용 세탁기 1 {% elif
+          item.item == 'L7' %} 공용 세탁기 2 {% elif item.item == 'L8' %} 여성용
+          세탁기 1 {% elif item.item == 'L9' %} 여성용 세탁기 2 {% else %}
+          세탁기 {{ item.item }} {% endif %}
+        </div>
 
-      <!-- 사용중 카드 -->
-      <button
-        class="bg-red-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-red-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 남성용 세탁기 4
-      </button>
+        {% if item.ban %}
+        <div class="text-sm mt-3 font-normal">🚫 사용불가</div>
+        {% elif item.using %}
+        <div class="text-sm mt-3 font-normal">
+          🔴 {{ item.use_start }} ~ {{ item.use_end }} 사용중
+        </div>
+        {% else %}
+        <div class="text-sm mt-3 font-normal">✅ 예약가능</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
 
+    <div class="flex justify-center mt-10 mb-20">
       <button
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
+        onclick="OpenReport()"
+        class="bg-red-800 rounded-xl shadow-md p-12 text-center text-lg font-semibold text-white hover:bg-red-700 active:translate-y-1 active:shadow-sm transform transition duration-100"
       >
-        🫧 남성용 세탁기 5
-      </button>
-
-      <button
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 공용 세탁기 6
-      </button>
-
-      <button
-        class="bg-green-400 rounded-xl shadow-md p-12 text-center text-lg font-semibold hover:bg-green-500 active:translate-y-1 active:shadow-sm transform transition duration-100"
-      >
-        🫧 공용 세탁기 7
+        고장신고
       </button>
     </div>
 
-    <!--
-  
-
-<div class="max-w-5xl mx-auto grid grid-cols-2 gap-10">
-
-{% for item in items %}
-
-  <button 
-    class="
-      {% if item.using == 'true' %}
-        bg-red-400 hover:bg-red-300
-      {% else %}
-        bg-green-400 hover:bg-green-500
-      {% endif %}
-      rounded-xl shadow-md p-12 text-center text-lg font-semibold
-      active:translate-y-1 active:shadow-sm
-      transform transition duration-100
-
-    "
-  >
-
-    🫧 {{ item.items }}
-
-    {% if item.using == 'true' %}
-      <div class="text-sm mt-3">
-        ⏱ 사용경과 : {{ item.elapsed }}
-      </div>
-    {% endif %}
-
-  </button>
-
-{% endfor %}
-
-</div>
-
-
-
--->
-
-    <!-- 로그인 모달 -->
     <div
-      id="loginModal"
-      class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center"
+      id="reportmodal"
+      class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
     >
       <div class="bg-white w-96 p-8 rounded-lg shadow-xl">
-        <h2 class="text-2xl font-bold mb-6 text-center">Log In</h2>
-
-        <div class="mb-4">
-          <label class="block mb-1 text-sm">Email</label>
-          <input type="email" class="w-full border rounded px-3 py-2" />
-        </div>
-
-        <div class="mb-6">
-          <label class="block mb-1 text-sm">Password</label>
-          <input type="password" class="w-full border rounded px-3 py-2" />
-        </div>
-
-        <button
-          class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-        >
-          로그인
-        </button>
-
-        <button onclick="closeModal()" class="w-full mt-3 text-gray-500">
-          닫기
-        </button>
+        <h2 class="text-2xl font-bold mb-6 text-left">신고기기선택</h2>
+        <form id="reportForm">
+          <select
+            id="machine-select"
+            name="machine"
+            class="w-full border rounded px-3 py-2 shadow"
+          >
+            <option value="">기기 선택</option>
+            {% for item in machines %}
+            <option
+              value="{{ item.item }}"
+              {%
+              if
+              item.ban
+              %}disabled{%
+              endif
+              %}
+            >
+              {% if item.item == 'L1' %} 남성용 세탁기 1 {% elif item.item ==
+              'L2' %} 남성용 세탁기 2 {% elif item.item == 'L3' %} 남성용 세탁기
+              3 {% elif item.item == 'L4' %} 남성용 세탁기 4 {% elif item.item
+              == 'L5' %} 남성용 세탁기 5 {% elif item.item == 'L6' %} 공용
+              세탁기 1 {% elif item.item == 'L7' %} 공용 세탁기 2 {% elif
+              item.item == 'L8' %} 여성용 세탁기 1 {% elif item.item == 'L9' %}
+              여성용 세탁기 2 {% else %} 세탁기 {{ item.item }} {% endif %} {%
+              if item.ban %}(점검중){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <div class="flex justify-end mt-5 gap-2">
+            <button
+              type="button"
+              onclick="CloseReport()"
+              class="px-4 py-2 text-gray-500"
+            >
+              닫기
+            </button>
+            <button
+              type="submit"
+              class="bg-red-800 rounded-lg px-6 py-2 text-white font-semibold hover:bg-red-700"
+            >
+              고장신고
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
     <script>
-      function openModal() {
-        document.getElementById("loginModal").classList.remove("hidden")
+      function OpenLogin() {
+        openLogin()
+      }
+      function CloseLogin() {
+        closeLogin()
+      }
+      function OpenReport() {
+        document.getElementById("reportmodal").classList.remove("hidden")
+      }
+      function CloseReport() {
+        document.getElementById("reportmodal").classList.add("hidden")
       }
 
-      function closeModal() {
-        document.getElementById("loginModal").classList.add("hidden")
+      $("#reportForm").submit(function (e) {
+        e.preventDefault()
+        const selectedMachine = $("#machine-select").val()
+        if (!selectedMachine) {
+          alert("기기를 선택해주세요.")
+          return
+        }
+        $.ajax({
+          type: "POST",
+          url: "/report",
+          contentType: "application/json",
+          data: JSON.stringify({
+            item: selectedMachine,
+            date: new Date().toLocaleString("ko-KR"),
+          }),
+          success: function (response) {
+            alert("고장 신고가 완료되었습니다. 빠르게 확인 후 처리하겠습니다.")
+            CloseReport()
+          },
+        })
+      })
+
+      function passMachineData(machineType) {
+        const baseUrl = "{{ url_for('find_reserve') }}"
+        location.href = baseUrl + "?item=" + encodeURIComponent(machineType)
       }
     </script>
   </body>

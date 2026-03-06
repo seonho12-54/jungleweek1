@@ -1,0 +1,206 @@
+<!-- 로그인 모달 -->
+<div
+  id="loginModal"
+  onclick="closeLogin()"
+  class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50"
+>
+  <div
+    class="bg-gray-50 max-w-[480px] w-full relative"
+    onclick="event.stopPropagation()"
+  >
+    <button
+      onclick="closeLogin()"
+      class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl leading-none"
+    >
+      &times;
+    </button>
+    <div class="flex flex-col items-center justify-center py-6 px-4">
+      <div class="max-w-[480px] w-full">
+        <a href="javascript:void(0)"
+          ><img
+            src="{{ url_for('static', filename='images/로고.png') }}"
+            alt="logo"
+            class="w-40 mb-8 mx-auto block"
+          />
+        </a>
+
+        <div
+          class="p-6 sm:p-8 rounded-2xl bg-white border border-gray-200 shadow-sm"
+        >
+          <form class="space-y-6">
+            <div>
+              <label class="text-slate-900 text-sm font-medium mb-2 block"
+                >아이디</label
+              >
+              <div class="relative flex items-center">
+                <input
+                  id="id"
+                  name="user-id"
+                  type="text"
+                  required
+                  class="w-full text-slate-900 text-sm border border-slate-300 px-4 py-3 pr-8 rounded-md outline-blue-600"
+                  placeholder="아이디를 입력하세요"
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="#bbb"
+                  stroke="#bbb"
+                  class="w-4 h-4 absolute right-4"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="10" cy="7" r="6" data-original="#000000"></circle>
+                  <path
+                    d="M14 15H6a5 5 0 0 0-5 5 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 5 5 0 0 0-5-5zm8-4h-2.59l.3-.29a1 1 0 0 0-1.42-1.42l-2 2a1 1 0 0 0 0 1.42l2 2a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42l-.3-.29H22a1 1 0 0 0 0-2z"
+                    data-original="#000000"
+                  ></path>
+                </svg>
+              </div>
+              <p id="id-error" class="mt-1 text-sm text-red-500 pl-1 hidden">
+                아이디를 입력해 주세요.
+              </p>
+            </div>
+
+            <div>
+              <label class="text-slate-900 text-sm font-medium mb-2 block"
+                >비밀번호</label
+              >
+              <div class="relative flex items-center">
+                <input
+                  id="pwd"
+                  name="비밀번호"
+                  type="password"
+                  required
+                  class="w-full text-slate-900 text-sm border border-slate-300 px-4 py-3 pr-8 rounded-md outline-blue-600"
+                  placeholder="비밀번호를 입력하세요"
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="#bbb"
+                  stroke="#bbb"
+                  class="w-4 h-4 absolute right-4 cursor-pointer"
+                  viewBox="0 0 128 128"
+                >
+                  <path
+                    d="M64 104C22.127 104 1.367 67.496.504 65.943a4 4 0 0 1 0-3.887C1.367 60.504 22.127 24 64 24s62.633 36.504 63.496 38.057a4 4 0 0 1 0 3.887C126.633 67.496 105.873 104 64 104zM8.707 63.994C13.465 71.205 32.146 96 64 96c31.955 0 50.553-24.775 55.293-31.994C114.535 56.795 95.854 32 64 32 32.045 32 13.447 56.775 8.707 63.994zM64 88c-13.234 0-24-10.766-24-24s10.766-24 24-24 24 10.766 24 24-10.766 24-24 24zm0-40c-8.822 0-16 7.178-16 16s7.178 16 16 16 16-7.178 16-16-7.178-16-16-16z"
+                    data-original="#000000"
+                  ></path>
+                </svg>
+              </div>
+              <p id="pwd-error" class="mt-1 text-sm text-red-500 pl-1 hidden">
+                비밀번호를 입력해 주세요.
+              </p>
+            </div>
+
+            <p id="login-error" class="text-sm text-red-500 pl-1 hidden"></p>
+
+            <div class="!mt-12">
+              <button
+                id="login-button"
+                type="button"
+                class="w-full py-2 px-4 text-[15px] font-medium tracking-wide rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none cursor-pointer"
+              >
+                로그인
+              </button>
+            </div>
+            <p class="text-slate-900 text-sm !mt-6 text-center">
+              아직 계정이 없으신가요?
+              <a
+                href="{{ url_for('register') }}"
+                class="text-blue-600 hover:underline ml-1 whitespace-nowrap font-semibold"
+                >회원가입</a
+              >
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script>
+    function openLogin() {
+      document.getElementById("loginModal").classList.remove("hidden")
+    }
+
+    function closeLogin() {
+      $("#id-error").addClass("hidden")
+      $("#pwd-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+      document.getElementById("loginModal").classList.add("hidden")
+    }
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop().split(";").shift()
+      return ""
+    }
+
+    // 입력 시작하면 에러 메시지 숨기기
+    $("#id").on("input", function () {
+      $("#id-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+    })
+    $("#pwd").on("input", function () {
+      $("#pwd-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+    })
+
+    $("#login-button").on("click", function (e) {
+      e.preventDefault()
+
+      const userId = $("#id").val()
+      const password = $("#pwd").val()
+
+      // 인풋 에러 초기화
+      $("#id-error").addClass("hidden")
+      $("#pwd-error").addClass("hidden")
+      $("#login-error").addClass("hidden")
+      let valid = true
+      if (!userId) {
+        $("#id-error").removeClass("hidden")
+        valid = false
+      }
+      if (!password) {
+        $("#pwd-error").removeClass("hidden")
+        valid = false
+      }
+      if (!valid) return
+
+      $.ajax({
+        type: "POST",
+        url: "/login",
+        contentType: "application/json",
+        data: JSON.stringify({ id: userId, pwd: password }),
+        success: function (response) {
+          closeLogin()
+          window.location.reload()
+        },
+        error: function (xhr) {
+          const msg =
+            xhr.responseJSON?.message || "아이디 또는 비밀번호를 확인해주세요."
+          $("#login-error").text(msg).removeClass("hidden")
+        },
+      })
+    })
+
+    function doLogout() {
+      const csrf = getCookie("csrf_access_token")
+
+      $.ajax({
+        type: "POST",
+        url: "/logout",
+        xhrFields: { withCredentials: true },
+        headers: { "X-CSRF-TOKEN": csrf },
+        success: function (response) {
+          if (response.result === "success") {
+            window.location.reload()
+          }
+        },
+        error: function () {
+          alert("로그아웃 처리 중 문제가 발생했습니다.")
+        },
+      })
+    }
+  </script>
+</div>

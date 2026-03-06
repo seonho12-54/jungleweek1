@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSRF helper</title>
+    <meta
+      name="csrf-token"
+      content="{{ csrf_token() if csrf_token else '' }}"
+    />
+  </head>
+  <body>
+    <script>
+      function getCookie(name) {
+        let value = "; " + document.cookie
+        let parts = value.split("; " + name + "=")
+        if (parts.length === 2) return parts.pop().split(";").shift()
+      }
+
+      $(document).ready(function () {
+        $.ajaxSetup({
+          beforeSend: function (xhr, settings) {
+            if (
+              !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) &&
+              !this.crossDomain
+            ) {
+              const jwtCsrfToken = getCookie("csrf_access_token")
+
+              const metaCsrfToken = $('meta[name="csrf-token"]').attr("content")
+
+              if (jwtCsrfToken) {
+                xhr.setRequestHeader("X-CSRF-TOKEN", jwtCsrfToken)
+              } else if (metaCsrfToken) {
+                xhr.setRequestHeader("X-CSRF-TOKEN", metaCsrfToken)
+              }
+            }
+          },
+        })
+      })
+    </script>
+  </body>
+</html>
