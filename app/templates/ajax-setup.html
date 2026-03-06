@@ -1,14 +1,27 @@
 <script>
   $.ajaxSetup({
-    error: function (xhr) {
-      const response = xhr.responseJSON
-      console.log("ffffdsf")
+    error: function (xhr, status, error) {
+      if (
+        xhr.status === 401 &&
+        xhr.responseJSON &&
+        xhr.responseJSON.message === "Token has expired"
+      ) {
+        const originalSettings = this
 
-      // 1. response가 있고, info 안에 우리가 정의한 4999 코드가 있는 경우
-      if (response && response.info && response.info.code === 4999) {
-        console.log("asdsad")
-        alert("asdsadsa")
-        // alert("🚫 " + response.info.description)
+        $.ajax({
+          type: "POST",
+          url: "/refresh",
+          success: function () {
+            // 토큰 갱신 성공하면 원래 하려던 작업 다시 수행
+            $.ajax(originalSettings)
+          },
+          error: function () {
+            // refresh token이 만료되었다면 다시 로그인 유도
+            alert("세션이 만료되었습니다. 다시 로그인해주세요.")
+            window.location.href = "/"
+          },
+        })
+        return
       }
     },
   })

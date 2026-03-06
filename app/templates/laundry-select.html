@@ -9,7 +9,7 @@
   </head>
 
   <body class="bg-gray-100 min-h-screen">
-    {% include 'common.html' %}
+    {% include 'csrf-helper.html' %} {% include 'common.html' %}
     <a
       href="{{ url_for('home') }}"
       class="absolute top-5 left-5 flex items-center gap-2 text-xl font-bold"
@@ -42,11 +42,18 @@
     <div class="max-w-5xl mx-auto grid grid-cols-2 gap-10 p-4">
       {% for item in machines %}
       <a
-        {% if item.ban %}
+        {%
+        if
+        item.ban
+        %}
         disabled
-        {% else %}
+        {%
+        else
+        %}
         onclick="passMachineData('{{ item.item }}')"
-        {% endif %}
+        {%
+        endif
+        %}
         class="rounded-xl shadow-md p-12 text-center text-lg font-semibold transform transition duration-100 flex flex-col items-center justify-center {% if item.ban %} bg-gray-400 cursor-not-allowed text-gray-700 {% elif item.using %} bg-red-400 hover:bg-red-500 active:translate-y-1 active:shadow-sm cursor-pointer text-white {% else %} bg-green-400 hover:bg-green-500 active:translate-y-1 active:shadow-sm text-black {% endif %}"
       >
         <div>
@@ -135,8 +142,12 @@
     </div>
 
     <script>
-      function OpenLogin() { openLogin() }
-      function CloseLogin() { closeLogin() }
+      function OpenLogin() {
+        openLogin()
+      }
+      function CloseLogin() {
+        closeLogin()
+      }
       function OpenReport() {
         document.getElementById("reportmodal").classList.remove("hidden")
       }

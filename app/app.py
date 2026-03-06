@@ -17,7 +17,6 @@ from flask_jwt_extended import (
 from flask.json.provider import JSONProvider
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timezone, timedelta
-from pymongo.errors import DuplicateKeyError
 
 import json
 import os
@@ -232,7 +231,7 @@ def create_reserve():
 
     try:
         db.reserve.insert_many(data_list, ordered=False)
-    except DuplicateKeyError:
+    except Exception:
         abort(409, description="이미 예약된 시간대입니다.")
 
     return jsonify({"result": "success"})
@@ -462,6 +461,7 @@ def send_slack_async(message):
 @app.errorhandler(403)
 @app.errorhandler(404)
 def handle_validation_error(e):
+ 
     error_data = e.description
     if isinstance(error_data, dict) and "code" in error_data:
         return jsonify({"result": "fail", "info": error_data}), e.code
