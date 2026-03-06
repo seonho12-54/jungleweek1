@@ -26,7 +26,13 @@ import threading
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+import ssl
+import certifi
 
+slack_client = WebClient(
+    token=os.environ.get("SLACK_BOT_TOKEN"),
+    ssl=ssl.create_default_context(cafile=certifi.where())
+)
 load_dotenv()
 
 slack_client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))

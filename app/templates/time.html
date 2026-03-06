@@ -184,7 +184,6 @@
       monday.setDate(now.getDate() + diffToMon)
       monday.setHours(0, 0, 0, 0)
 
-      // ✅ 오늘 요일로 dayIndex 초기화 (월=0 ~ 일=6)
       let dayIndex = jsDay === 0 ? 6 : jsDay - 1
 
       const ampmByDay = Array(7).fill("AM")
@@ -193,11 +192,12 @@
       let selectedStartSec = null
       let selectedEndSec = null
 
-      // ✅ URL에서 item 파라미터 읽기
+      // 예약 저장 완료 후 fetchAndRefresh 대기 중인 임시 예약 ID 추적
+      let pendingDelete = new Set()
+
       const params = new URLSearchParams(window.location.search)
       const currentItem = params.get("item") || ""
 
-      // ✅ 페이지 타이틀 설정
       if (currentItem) {
         const type = currentItem[0]
         const num = currentItem.slice(1)
@@ -407,17 +407,22 @@
 
             box.appendChild(left)
 
-            // 내 예약일 때만 삭제 버튼 표시
+            // 내 예약일 때만 취소/반납 버튼 표시
             if (r.own) {
               const del = document.createElement("button")
               del.className =
                 "text-xs px-2 py-1 border border-neutral-300 rounded hover:bg-white shrink-0"
-              del.textContent = "삭제"
-              del.disabled = !r._id
+              del.textContent = "취소/반납"
+
+              // _id가 없으면 비활성화 (fetchAndRefresh 완료 전 임시 상태)
+              if (!r._id) {
+                del.disabled = true
+                del.classList.add("opacity-40", "cursor-not-allowed")
+              }
 
               del.addEventListener("click", () => {
                 if (!r._id) return
-                if (!confirm("예약을 삭제하시겠습니까?")) return
+                if (!confirm("예약을 취소/반납하시겠습니까?")) return
                 deleteReservationsData(r._id)
               })
 
@@ -545,7 +550,6 @@
             },
           ]
 
-          // 선택 초기화만 하고, 화면 반영은 서버 응답 후에만 함
           resetPick()
           renderGrid()
 
@@ -597,6 +601,7 @@
           },
           data: JSON.stringify(saveData),
           success: function (resp) {
+            // fetchAndRefresh로 _id를 받아온 뒤 renderReservations에서 버튼 활성화됨
             reservations.push({
               dayIndex: dayIndex,
               dateStr: dateStrForDayIndex(dayIndex),
@@ -605,7 +610,7 @@
               period: period,
               item: currentItem,
               own: true,
-              _id: null,
+              _id: resp._id, // fetchAndRefresh 완료 전까지 null → 버튼 비활성
             })
             renderReservations()
             renderGrid()
@@ -621,7 +626,6 @@
             } else {
               alert("예약 중 오류가 발생했습니다.")
             }
-            // 실패 시 화면에 아무것도 추가하지 않았으므로 그냥 그리드만 다시 그림
             renderGrid()
             renderReservations()
           },
@@ -630,7 +634,12 @@
 
       function deleteReservationsData(pk) {
         if (!pk) return
-
+        const idx = reservations.findIndex((r) => r._id === pk)
+        if (idx !== -1) {
+          reservations.splice(idx, 1)
+          renderReservations()
+          renderGrid()
+        }
         $.ajax({
           type: "DELETE",
           url: `/reserve/${encodeURIComponent(pk)}`,
@@ -640,15 +649,15 @@
             "X-Requested-With": "XMLHttpRequest",
           },
           success: function (resp) {
+            alert("취소/반납이 완료되었습니다.")
             fetchAndRefresh()
           },
           error: function (xhr) {
-            alert("삭제 중 오류가 발생했습니다.")
+            alert("취소/반납 중 오류가 발생했습니다.")
           },
         })
       }
 
-      // 서버에서 최신 예약 데이터를 AJAX로 가져와서 화면 갱신
       function fetchAndRefresh() {
         $.ajax({
           type: "GET",
@@ -684,12 +693,11 @@
             renderGrid()
           },
           error: function () {
-            // alert 없이 조용히 실패 (이미 로컬 데이터로 화면은 표시 중)
+            // 조용히 실패
           },
         })
       }
 
-      // 초기 로드: 서버에서 렌더링된 데이터로 파싱
       function loadServerReservations() {
         const serverReserves = JSON.parse(
           document.getElementById("reserves-data").textContent,

@@ -1,6 +1,7 @@
 <script>
   $.ajaxSetup({
     error: function (xhr, status, error) {
+      console.log("Here")
       if (
         xhr.status === 401 &&
         xhr.responseJSON &&
@@ -25,4 +26,5 @@
       }
     },
   })
+  console.log("Here")
 </script>
