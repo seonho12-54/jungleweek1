@@ -12,6 +12,7 @@ from flask_jwt_extended import (
     set_access_cookies,
     set_refresh_cookies,
     unset_jwt_cookies,
+    verify_jwt_in_request
 )
 
 from flask.json.provider import JSONProvider
@@ -44,6 +45,7 @@ app.config["JWT_COOKIE_CSRF_PROTECT"] = True
 app.config["JWT_ACCESS_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
 app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN"
 app.config["JWT_COOKIE_SECURE"] = True
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=10)
 
 bcrypt = Bcrypt(app)
 
@@ -68,7 +70,42 @@ class CustomJSONProvider(JSONProvider):
 app.json = CustomJSONProvider(app)
 #####################################################################################
 
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_data):
+    if request.cookies.get("refresh_token_cookie"):
+        return redirect(url_for("refresh_and_redirect", next_url=request.url))
+   
+    response = redirect(url_for("home"))
+    unset_jwt_cookies(response)
+    return response
 
+@app.route("/refresh-redirect", methods=["GET"])
+def refresh_and_redirect():
+    next_url = request.args.get("next_url", url_for("home"))
+    raw_refresh_token = request.cookies.get("refresh_token_cookie")
+
+    verify_jwt_in_request(refresh=True)  # 서명 + 만료 검증
+    current_user = get_jwt_identity()
+
+    # DB hash 검증 (토큰 탈취 감지)
+    stored_token_data = db.refresh_tokens.find_one({"user_id": current_user})
+    if not stored_token_data:
+        abort(401, description="다시 로그인 하세요.")
+
+    salt = stored_token_data.get("salt")
+    sha256_hash = hashlib.sha256()
+    sha256_hash.update((raw_refresh_token + salt).encode("utf-8"))
+
+    if stored_token_data["refresh_token"] == sha256_hash.hexdigest():
+        access_token = create_access_token(identity=current_user)
+        new_refresh_token = refresh_token_key_rotation(current_user)
+
+        response = redirect(next_url)
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, new_refresh_token)
+        return response
+    else:
+        abort(401, description="접근 권한이 없습니다.")
 
 @app.route("/")
 @jwt_required(optional=True)
@@ -156,34 +193,6 @@ def logout():
         db.refresh_tokens.delete_one({"user_id": current_user})
     unset_jwt_cookies(response)
     return response
-
-
-@app.route("/refresh", methods=["POST"])
-@jwt_required(refresh=True)
-def refresh():
-    current_user = get_jwt_identity()
-    raw_refresh_token = request.cookies.get("refresh_token_cookie")
-    stored_token_data = db.refresh_tokens.find_one({"user_id": current_user})
-
-    if not stored_token_data:
-        abort(401, description="다시 로그인 하세요.")
-
-    salt = stored_token_data.get("salt")
-    sha256_hash = hashlib.sha256()
-    combined_string = raw_refresh_token + salt
-    sha256_hash.update(combined_string.encode("utf-8"))
-    current_hash_result = sha256_hash.hexdigest()
-
-    if stored_token_data["refresh_token"] == current_hash_result:
-        access_token = create_access_token(identity=current_user)
-        new_refresh_token = refresh_token_key_rotation(current_user)
-
-        response = jsonify({"result": "success"})
-        set_access_cookies(response, access_token)
-        set_refresh_cookies(response, new_refresh_token)
-        return response
-    else:
-        abort(401, description="접근 권한이 없습니다.")
 
 
 def refresh_token_hash(user_id, refresh_token, type):
