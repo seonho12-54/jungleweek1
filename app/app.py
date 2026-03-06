@@ -12,7 +12,7 @@ from flask_jwt_extended import (
     set_access_cookies,
     set_refresh_cookies,
     unset_jwt_cookies,
-    verify_jwt_in_request
+    verify_jwt_in_request,
 )
 
 from flask.json.provider import JSONProvider
@@ -34,7 +34,8 @@ SLACK_CHANNEL_ID = os.environ.get("SLACK_CHANNEL_ID")
 
 app = Flask(__name__)
 jwt = JWTManager(app)
-client = MongoClient("mongodb://localhost:27017")
+database_url = os.environ.get("DATABASE_URL")
+client = MongoClient(database_url, 27017)
 db = client.dbjungle
 
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
@@ -70,14 +71,16 @@ class CustomJSONProvider(JSONProvider):
 app.json = CustomJSONProvider(app)
 #####################################################################################
 
+
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_data):
     if request.cookies.get("refresh_token_cookie"):
         return redirect(url_for("refresh_and_redirect", next_url=request.url))
-   
+
     response = redirect(url_for("home"))
     unset_jwt_cookies(response)
     return response
+
 
 @app.route("/refresh-redirect", methods=["GET"])
 def refresh_and_redirect():
@@ -106,6 +109,7 @@ def refresh_and_redirect():
         return response
     else:
         abort(401, description="접근 권한이 없습니다.")
+
 
 @app.route("/")
 @jwt_required(optional=True)
@@ -256,7 +260,10 @@ def validation_reserve(uid, data_list):
             }
         )
         if conflict:
-            abort(409, description=f"{req['start']} ~ {req['end']} 시간대에 이미 예약이 존재합니다.")
+            abort(
+                409,
+                description=f"{req['start']} ~ {req['end']} 시간대에 이미 예약이 존재합니다.",
+            )
 
     request_minutes_by_date = {}
     for req in data_list:
@@ -264,20 +271,31 @@ def validation_reserve(uid, data_list):
         start_dt = datetime.strptime(req["start"], "%Y-%m-%d %H:%M:%S")
         end_dt = datetime.strptime(req["end"], "%Y-%m-%d %H:%M:%S")
         duration = (end_dt - start_dt).seconds // 60
-        request_minutes_by_date[date_key] = request_minutes_by_date.get(date_key, 0) + duration
+        request_minutes_by_date[date_key] = (
+            request_minutes_by_date.get(date_key, 0) + duration
+        )
 
     for date_key, req_minutes in request_minutes_by_date.items():
-        existing = list(db.reserve.find({"id": uid, "start": {"$regex": f"^{date_key}"}}))
+        existing = list(
+            db.reserve.find({"id": uid, "start": {"$regex": f"^{date_key}"}})
+        )
         existing_minutes = sum(
             (
                 datetime.strptime(doc["end"], "%Y-%m-%d %H:%M:%S")
                 - datetime.strptime(doc["start"], "%Y-%m-%d %H:%M:%S")
-            ).seconds // 60
+            ).seconds
+            // 60
             for doc in existing
         )
         total = existing_minutes + req_minutes
         if total > 120:
-            abort(400, description={"code": 4999, "description": f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다."})
+            abort(
+                400,
+                description={
+                    "code": 4999,
+                    "description": f"{date_key} 날짜의 예약 가능 시간(2시간)을 초과합니다.",
+                },
+            )
 
 
 # 예약 조회
@@ -291,7 +309,9 @@ def find_reserve():
     for reserve in reserves:
         reserve["own"] = uid is not None and reserve["id"] == uid
 
-    return render_template("time.html", reserves=reserves, current_user=uid, machine_type=item)
+    return render_template(
+        "time.html", reserves=reserves, current_user=uid, machine_type=item
+    )
 
 
 @app.route("/machine/<machine_type>", methods=["GET"])
@@ -304,7 +324,10 @@ def find_machine(machine_type):
     user_gender = user_info.get("gender") if user_info else None
 
     if user_gender:
-        query = {"item": {"$regex": f"^{prefix}"}, "gender": {"$in": [user_gender, "both"]}}
+        query = {
+            "item": {"$regex": f"^{prefix}"},
+            "gender": {"$in": [user_gender, "both"]},
+        }
     else:
         query = {"item": {"$regex": f"^{prefix}"}}
 
@@ -313,11 +336,13 @@ def find_machine(machine_type):
     # 현재 진행 중인 예약 정보를 각 기계에 붙여줌
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     for machine in machines:
-        active = db.reserve.find_one({
-            "item": machine["item"],
-            "start": {"$lte": now},
-            "end": {"$gte": now},
-        })
+        active = db.reserve.find_one(
+            {
+                "item": machine["item"],
+                "start": {"$lte": now},
+                "end": {"$gte": now},
+            }
+        )
         if active:
             machine["using"] = True
             machine["use_start"] = active["start"][11:16]  # "HH:MM"
@@ -328,9 +353,13 @@ def find_machine(machine_type):
             machine["use_end"] = None
 
     if prefix == "L":
-        return render_template("laundry-select.html", machines=machines, current_user=user_info)
+        return render_template(
+            "laundry-select.html", machines=machines, current_user=user_info
+        )
     elif prefix == "D":
-        return render_template("dryer-select.html", machines=machines, current_user=user_info)
+        return render_template(
+            "dryer-select.html", machines=machines, current_user=user_info
+        )
     else:
         abort(400, "유효한 기계 타입이 아닙니다.")
 
@@ -437,7 +466,9 @@ def return_machine(pk):
         machine_name = reserve["item"]
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    next_reserve = db.reserve.find_one({"item": item, "start": {"$gte": now}}, sort=[("start", 1)])
+    next_reserve = db.reserve.find_one(
+        {"item": item, "start": {"$gte": now}}, sort=[("start", 1)]
+    )
 
     if next_reserve:
         next_name = next_reserve.get("name", next_reserve["id"])
@@ -470,7 +501,7 @@ def send_slack_async(message):
 @app.errorhandler(403)
 @app.errorhandler(404)
 def handle_validation_error(e):
- 
+
     error_data = e.description
     if isinstance(error_data, dict) and "code" in error_data:
         return jsonify({"result": "fail", "info": error_data}), e.code
